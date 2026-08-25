@@ -173,23 +173,20 @@ export function PitchDeck() {
   return (
     <main className={styles.deck} aria-label="Lattice pitch deck">
       <section className={`${styles.slide} ${slide === 0 ? styles.active : ''}`} aria-hidden={slide !== 0}>
-        <article className={styles.playbookSurface}>
-          <header className={styles.playbookHeader}>
-            <span className={styles.playbookIcon} aria-hidden="true" />
-            <h1>THE ONE-PAGE PLAYBOOK</h1>
-          </header>
-          <div className={styles.playbookRule} />
-          <ol className={styles.playbookList}>
-            <li><b>1</b><p><strong>Before 11:20:</strong> write the demo story, assign roles, create 5–8 small issues.</p></li>
-            <li><b>2</b><p><strong>Deploy before lunch:</strong> configure CI/CD and ship the thinnest working journey.</p></li>
-            <li><b>3</b><p><strong>Write the house rules (AGENTS.md):</strong> stack, conventions, build, and tests.</p></li>
-            <li><b>4</b><p><strong>One issue per agent</strong>. Clear acceptance criteria, constraints, own branch.</p></li>
-            <li><b>5</b><p><strong>Require a small PR</strong> with green tests before anything reaches main.</p></li>
-            <li><b>6</b><p><strong>Start with one or two agents;</strong> parallelize only independent work.</p></li>
-            <li><b>7</b><p><strong>Freeze at 16:00:</strong> rehearse the 3-minute pitch, record a backup, submit by 17:00.</p></li>
-          </ol>
-          <p className={styles.playbookCaption}>If there&apos;s one slide to screenshot, this is it.</p>
-        </article>
+        <div className={styles.playbookHeading}>
+          <h1>The One-Page Playbook</h1>
+        </div>
+
+        <ol className={styles.playbookList}>
+          <li><b>1</b><p><strong>Before 11:20:</strong> write the demo story, assign roles, create 5–8 small issues.</p></li>
+          <li><b>2</b><p><strong>Deploy before lunch:</strong> configure CI/CD and ship the thinnest working journey.</p></li>
+          <li><b>3</b><p><strong>Write the house rules (AGENTS.md):</strong> stack, conventions, build, and tests.</p></li>
+          <li><b>4</b><p><strong>One issue per agent.</strong> Clear acceptance criteria, constraints, own branch.</p></li>
+          <li><b>5</b><p><strong>Require a small PR</strong> with green tests before anything reaches main.</p></li>
+          <li><b>6</b><p><strong>Start with one or two agents;</strong> parallelize only independent work.</p></li>
+          <li><b>7</b><p><strong>Freeze at 16:00:</strong> rehearse the 3-minute pitch, record a backup, submit by 17:00.</p></li>
+        </ol>
+
       </section>
 
       <section className={`${styles.slide} ${slide === 1 ? styles.active : ''}`} aria-hidden={slide !== 1}>
