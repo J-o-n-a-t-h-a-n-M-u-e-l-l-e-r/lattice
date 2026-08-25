@@ -42,6 +42,14 @@ export function reduce(nodes: GraphNode[], edges: LatticeEdge[]): LatticeEdge[] 
   });
 }
 
+/* ── styling constants, shared so identity is stable between renders ─────── */
+
+const EDGE_MARKER = { type: 'arrowclosed' as const, width: 16, height: 16, color: '#6e7b91' };
+const EDGE_MARKER_LIT = { type: 'arrowclosed' as const, width: 16, height: 16, color: '#79c0ff' };
+const EDGE_STYLE = { stroke: '#5a6478', strokeWidth: 1.5, opacity: 0.85 };
+const EDGE_STYLE_LIT = { stroke: '#79c0ff', strokeWidth: 2.4, opacity: 1 };
+const EDGE_STYLE_DIM = { stroke: '#5a6478', strokeWidth: 1.5, opacity: 0.06 };
+
 /* ── the layered layout ──────────────────────────────────────────────────── */
 
 type Cell = { id: string; real: number | null; layer: number; x: number; width: number };
@@ -71,7 +79,7 @@ export interface Laid {
 export function layout(
   nodes: GraphNode[],
   edges: LatticeEdge[],
-  opts: { criticalPath: number[]; highlight: Set<number> | null; selected: number | null },
+  opts: { criticalPath: number[] },
 ): Laid {
   const layerOf = new Map(nodes.map((n) => [n.number, n.wave]));
   const maxLayer = nodes.reduce((m, n) => Math.max(m, n.wave), 0);
@@ -284,21 +292,13 @@ export function layout(
         id: String(n.number),
         type: 'issue',
         position: { x: c.x, y: yOf(c.layer) },
-        data: {
-          node: n,
-          onCritical: criticalSet.has(n.number),
-          dim: opts.highlight !== null && !opts.highlight.has(n.number),
-          selected: opts.selected === n.number,
-        },
+        data: { node: n, onCritical: criticalSet.has(n.number), dim: false, selected: false },
         draggable: true,
       });
     }
   }
 
   const flowEdges: Edge[] = edges.map((e) => {
-    const lit = opts.highlight !== null
-      && opts.highlight.has(e.blocked) && opts.highlight.has(e.blockedBy);
-    const dim = opts.highlight !== null && !lit;
     const key = `${e.blockedBy}->${e.blocked}`;
     const via = (chains.get(key) ?? []).map(pointOf);
     return {
@@ -306,14 +306,9 @@ export function layout(
       source: String(e.blockedBy),
       target: String(e.blocked),
       type: via.length ? 'routed' : 'default',
-      markerEnd: { type: 'arrowclosed' as const, width: 16, height: 16,
-                   color: lit ? '#79c0ff' : '#6e7b91' },
-      style: {
-        stroke: lit ? '#79c0ff' : '#5a6478',
-        strokeWidth: lit ? 2.4 : 1.5,
-        opacity: dim ? 0.06 : 0.85,
-      },
-      zIndex: lit ? 10 : 1,
+      markerEnd: EDGE_MARKER,
+      style: EDGE_STYLE,
+      zIndex: 1,
       data: { edge: e, via },
     };
   });
@@ -352,4 +347,44 @@ export function partition(nodes: GraphNode[], edges: LatticeEdge[]) {
     connected: nodes.filter((n) => touched.has(n.number)),
     isolated: nodes.filter((n) => !touched.has(n.number)),
   };
+}
+
+/**
+ * Apply hover/selection to an already-laid graph.
+ *
+ * Deliberately separate from layout(). Folding highlight into the layout meant
+ * every mouseenter re-ran sixteen ordering sweeps and rebuilt every node
+ * object, so the card under the cursor was torn down and recreated mid-hover -
+ * which re-fired mouseleave/mouseenter and made it flicker.
+ *
+ * Positions are reused by reference here. Only `data` and edge styling change.
+ */
+export function decorate(
+  laid: Laid,
+  opts: { highlight: Set<number> | null; selected: number | null },
+): { nodes: Node[]; edges: Edge[] } {
+  const { highlight, selected } = opts;
+
+  const nodes = laid.nodes.map((n) => {
+    if (n.type !== 'issue') return n;
+    const num = Number(n.id);
+    const dim = highlight !== null && !highlight.has(num);
+    const isSelected = selected === num;
+    const data = n.data as { dim: boolean; selected: boolean };
+    // Same object when nothing changed, so React can skip the subtree.
+    if (data.dim === dim && data.selected === isSelected) return n;
+    return { ...n, data: { ...n.data, dim, selected: isSelected } };
+  });
+
+  const edges = laid.edges.map((e) => {
+    const edge = (e.data as { edge: { blocked: number; blockedBy: number } }).edge;
+    const lit = highlight !== null
+      && highlight.has(edge.blocked) && highlight.has(edge.blockedBy);
+    const dim = highlight !== null && !lit;
+    const style = lit ? EDGE_STYLE_LIT : dim ? EDGE_STYLE_DIM : EDGE_STYLE;
+    if (e.style === style) return e;
+    return { ...e, style, markerEnd: lit ? EDGE_MARKER_LIT : EDGE_MARKER, zIndex: lit ? 10 : 1 };
+  });
+
+  return { nodes, edges };
 }

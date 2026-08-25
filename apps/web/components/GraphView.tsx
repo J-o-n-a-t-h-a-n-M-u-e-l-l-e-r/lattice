@@ -6,7 +6,7 @@ import {
 import '@xyflow/react/dist/style.css';
 import type { GraphPayload } from '@lattice/types';
 import { api } from '../lib/api';
-import { connectedSet, layout, partition, reduce } from './graph-layout';
+import { connectedSet, decorate, layout, partition, reduce } from './graph-layout';
 import { IssueNode, WaveLabel } from './IssueNode';
 import { RoutedEdge } from './RoutedEdge';
 import { NodePanel } from './NodePanel';
@@ -34,22 +34,29 @@ export function GraphView({ initial, initialError, repo }: {
       .catch((e) => setError({ message: e.message, status: e.status, url: e.url }));
   };
 
+  // Layout is expensive - sixteen ordering sweeps plus x-assignment - so it
+  // runs only when the graph itself changes, never on hover.
   const view = useMemo(() => {
     if (!payload) return null;
     // Only blocking edges are drawn. A weak, sub-threshold guess does not
     // deserve a line across the picture - it is in the panel instead.
     let edges = payload.edges.filter((e) => e.blocking);
     if (reduced) edges = reduce(payload.nodes, edges);
-
     const { connected, isolated } = partition(payload.nodes, edges);
+    const laid = layout(connected, edges, { criticalPath: payload.criticalPath });
+    return { laid, isolated, edges, edgeCount: edges.length };
+  }, [payload, reduced]);
+
+  // Hover and selection are styling only: same positions, same node identities
+  // wherever nothing changed.
+  const display = useMemo(() => {
+    if (!view) return null;
     const focus = hover ?? selected;
-    const laid = layout(connected, edges, {
-      criticalPath: payload.criticalPath,
-      highlight: focus === null ? null : connectedSet(focus, edges),
+    return decorate(view.laid, {
+      highlight: focus === null ? null : connectedSet(focus, view.edges),
       selected,
     });
-    return { laid, isolated, edgeCount: edges.length };
-  }, [payload, reduced, hover, selected]);
+  }, [view, hover, selected]);
 
   if (error && !payload) {
     const noRun = error.status === 404;
@@ -69,7 +76,7 @@ export function GraphView({ initial, initialError, repo }: {
       </div>
     );
   }
-  if (!payload || !view) {
+  if (!payload || !view || !display) {
     return <div className="flex-1 grid place-items-center text-[13px]" style={{ color: '#8b93a7' }}>
       No graph data.
     </div>;
@@ -83,8 +90,8 @@ export function GraphView({ initial, initialError, repo }: {
       <div className="flex-1 relative min-w-0">
         <ReactFlowProvider>
           <ReactFlow
-            nodes={laid.nodes}
-            edges={laid.edges}
+            nodes={display.nodes}
+            edges={display.edges}
             nodeTypes={nodeTypes}
             edgeTypes={edgeTypes}
             fitView
@@ -93,8 +100,8 @@ export function GraphView({ initial, initialError, repo }: {
             maxZoom={1.6}
             proOptions={{ hideAttribution: true }}
             onNodeClick={(_, n) => setSelected(Number(n.id))}
-            onNodeMouseEnter={(_, n) => setHover(Number(n.id))}
-            onNodeMouseLeave={() => setHover(null)}
+            onNodeMouseEnter={(_, n) => { const v = Number(n.id); setHover((p) => (p === v ? p : v)); }}
+            onNodeMouseLeave={() => setHover((p) => (p === null ? p : null))}
             onPaneClick={() => setSelected(null)}
           >
             <Background variant={BackgroundVariant.Dots} gap={24} size={1} color="#1a1f29" />
