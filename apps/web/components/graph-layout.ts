@@ -81,7 +81,7 @@ export interface Laid {
 export function layout(
   nodes: GraphNode[],
   edges: LatticeEdge[],
-  opts: { criticalPath: number[] },
+  opts: { criticalPath: number[]; independent?: Set<number> },
 ): Laid {
   // A backlog is usually several unrelated dependency trees. Laying them out
   // together leaves a canyon between them, because x-assignment only ever
@@ -194,7 +194,12 @@ export function layout(
       id: String(n.number),
       type: 'issue',
       position: { x: c.x, y: yOf(c.layer) },
-      data: { node: n, onCritical: criticalSet.has(n.number), dim: false, selected: false },
+      data: {
+        node: n,
+        onCritical: criticalSet.has(n.number),
+        independent: opts.independent?.has(n.number) ?? false,
+        dim: false, selected: false,
+      },
       draggable: true,
     });
   }

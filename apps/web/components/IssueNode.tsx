@@ -13,8 +13,9 @@ export const NODE_H = 86;
  * the issues list, not a node in an abstract diagram.
  */
 export function IssueNode({ data }: NodeProps) {
-  const { node, onCritical, dim, selected } = data as {
+  const { node, onCritical, dim, selected, independent } = data as {
     node: GraphNode; onCritical: boolean; dim: boolean; selected: boolean;
+    independent?: boolean;
   };
 
   return (
@@ -24,6 +25,9 @@ export function IssueNode({ data }: NodeProps) {
         'hover:border-muted-foreground/40 hover:shadow-md',
         selected && 'border-primary ring-2 ring-primary/25',
         onCritical && !selected && 'border-[hsl(var(--critical))]/60',
+        // Independent issues only appear when the toggle is on, so they are
+        // marked to stay distinguishable from the dependency structure.
+        independent && !selected && !onCritical && 'border-primary/70 border-dashed',
       )}
       style={{ width: NODE_W, height: NODE_H, opacity: dim ? 0.25 : 1 }}
     >
@@ -47,6 +51,12 @@ export function IssueNode({ data }: NodeProps) {
             <>
               <span aria-hidden>·</span>
               <span className="font-medium text-primary">unblocks {node.blastRadius}</span>
+            </>
+          )}
+          {independent && (
+            <>
+              <span aria-hidden>·</span>
+              <span className="font-medium text-primary">independent</span>
             </>
           )}
         </div>

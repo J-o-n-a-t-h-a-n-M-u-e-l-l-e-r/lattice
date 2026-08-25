@@ -53,9 +53,15 @@ export function GraphView({ initial, initialError, repo }: {
     let edges = payload.edges.filter((e) => e.blocking);
     if (options.reduced) edges = reduce(payload.nodes, edges);
     const { connected, isolated } = partition(payload.nodes, edges);
-    const laid = layout(connected, edges, { criticalPath: payload.criticalPath });
+
+    // Off by default the graph shows dependency structure only. Turning the
+    // toggle on draws the independent issues too, marked, so the toggle
+    // actually changes the picture instead of only opening a drawer.
+    const drawn = options.showIsolated ? [...connected, ...isolated] : connected;
+    const independent = new Set(isolated.map((n) => n.number));
+    const laid = layout(drawn, edges, { criticalPath: payload.criticalPath, independent });
     return { laid, isolated, edges, edgeCount: edges.length };
-  }, [payload, options.reduced]);
+  }, [payload, options.reduced, options.showIsolated]);
 
   // Hover and selection are styling only: same positions, same identities.
   const display = useMemo(() => {
@@ -129,17 +135,22 @@ export function GraphView({ initial, initialError, repo }: {
           {options.showIsolated && view.isolated.length > 0 && (
             <div className="absolute inset-x-4 bottom-4 z-10 max-h-[32vh] overflow-y-auto
                             rounded-lg border bg-card/95 p-3 shadow-lg backdrop-blur">
-              <p className="mb-2 text-[12px] font-medium text-muted-foreground">
-                {view.isolated.length} issues with no dependencies — start any of them
+              <p className="mb-2 flex items-center gap-1.5 text-[12px] font-medium text-muted-foreground">
+                <span className="inline-block h-2.5 w-2.5 shrink-0 rounded-sm border border-dashed border-primary/70" aria-hidden />
+                {view.isolated.length} issues with no dependencies — outlined in the graph, start any of them
               </p>
               <div className="flex flex-wrap gap-1.5">
                 {view.isolated.map((n) => (
                   <button key={n.number} onClick={() => setSelected(n.number)}
-                          className="flex max-w-[280px] cursor-pointer items-center gap-1.5 rounded-md
+                          title={`#${n.number} ${n.title}`}
+                          className="flex max-w-[300px] cursor-pointer items-center gap-1.5 rounded-md
                                      border bg-background px-2 py-1 text-[12px] transition-colors
                                      hover:border-muted-foreground/40 focus-visible:outline-none
                                      focus-visible:ring-2 focus-visible:ring-ring">
                     <IssueState state={n.state} className="h-3.5 w-3.5 shrink-0" />
+                    <span className="shrink-0 font-mono text-[11px] text-muted-foreground">
+                      #{n.number}
+                    </span>
                     <span className="truncate">{n.title}</span>
                   </button>
                 ))}
