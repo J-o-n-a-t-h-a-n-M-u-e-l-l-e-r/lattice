@@ -1,5 +1,6 @@
 import { Octokit } from '@octokit/rest';
 import type { Edge, Issue } from '@lattice/types';
+import { getToken, invalidateToken } from './token.js';
 
 /**
  * GitHub is a DATA SOURCE, not a data store. Everything in this file reads.
@@ -8,10 +9,22 @@ import type { Edge, Issue } from '@lattice/types';
 
 const API_VERSION = '2026-03-10';
 
-export function octokit(): Octokit {
-  const auth = process.env.GITHUB_TOKEN;
-  if (!auth) throw new Error('GITHUB_TOKEN is not set');
-  return new Octokit({ auth });
+export async function octokit(): Promise<Octokit> {
+  return new Octokit({ auth: await getToken() });
+}
+
+/**
+ * Run a GitHub call, and on a 401 drop the cached token and try once more.
+ * That is what makes `gh auth login` take effect without a server restart.
+ */
+async function withAuthRetry<T>(fn: (kit: Octokit) => Promise<T>): Promise<T> {
+  try {
+    return await fn(await octokit());
+  } catch (err) {
+    if ((err as { status?: number })?.status !== 401) throw err;
+    invalidateToken();
+    return fn(await octokit());
+  }
 }
 
 interface GqlIssue {
@@ -27,7 +40,7 @@ interface GqlIssue {
  * only what humans see.
  */
 export async function fetchIssues(owner: string, repo: string): Promise<Issue[]> {
-  const kit = octokit();
+  return withAuthRetry(async (kit) => {
   const out: Issue[] = [];
   let cursor: string | null = null;
 
@@ -66,6 +79,7 @@ export async function fetchIssues(owner: string, repo: string): Promise<Issue[]>
     cursor = conn.pageInfo.endCursor;
   }
   return out;
+  });
 }
 
 /**
@@ -79,7 +93,7 @@ export async function fetchIssues(owner: string, repo: string): Promise<Issue[]>
 export async function fetchGivenEdges(
   owner: string, repo: string, issues: Issue[],
 ): Promise<Edge[]> {
-  const kit = octokit();
+  const kit = await octokit();
   const byDbId = new Map(issues.map((i) => [i.databaseId, i.number]));
   const edges: Edge[] = [];
   const queue = [...issues];
@@ -119,7 +133,7 @@ export async function fetchGivenEdges(
 export async function fetchSubIssueEdges(
   owner: string, repo: string,
 ): Promise<Edge[]> {
-  const kit = octokit();
+  const kit = await octokit();
   try {
     const res: any = await kit.graphql(
       `query($owner:String!, $repo:String!) {
