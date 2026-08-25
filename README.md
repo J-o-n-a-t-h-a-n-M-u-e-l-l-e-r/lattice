@@ -97,6 +97,10 @@ npm run dev -w @lattice/web                          # :3000
 Open **http://localhost:3000**, paste any public GitHub repo URL, and it
 analyses it. Repos you have already analysed are listed on the same page.
 
+> **Don't run `npm run build` while `next dev` is running** — the build
+> overwrites `.next` underneath the dev server and every route 500s with
+> `MODULE_NOT_FOUND`. Stop dev first, or `rm -rf apps/web/.next` and restart it.
+>
 > `npm run dev` (both services with hot reload) uses `tsx`. If it fails with
 > `The package "@esbuild/darwin-arm64" could not be found`, npm has dropped an
 > optional binary — `rm -rf node_modules package-lock.json && npm install
