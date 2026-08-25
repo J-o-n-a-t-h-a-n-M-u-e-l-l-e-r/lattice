@@ -2,7 +2,7 @@
 <!-- labels: lane:github-io,size:M -->
 **What**
 
-`src/lib/github/fetch.ts` — one paginated GraphQL query, 50 issues per page, capturing per issue: `number`, `id` (node id, needed later for Copilot assignment), **`databaseId`**, `title`, `body`, `labels`, `milestone`, `assignees`, `state`, and `timelineItems` filtered to `CROSS_REFERENCED_EVENT` and `CONNECTED_EVENT`.
+`src/lib/github/fetch.ts` — one paginated GraphQL query, 50 issues per page, capturing per issue: `number`, `id` (node id), **`databaseId`**, `title`, `body`, `labels`, `milestone`, `assignees`, `state`, and `timelineItems` filtered to `CROSS_REFERENCED_EVENT` and `CONNECTED_EVENT`.
 
 Cache the result to `.lattice/raw.json` behind a `--cached` flag.
 

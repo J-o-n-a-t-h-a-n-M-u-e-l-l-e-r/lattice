@@ -9,7 +9,7 @@ A real MCP client that connects to our server, calls `claim_next_issue`, prints 
 Two jobs, both important:
 
 1. **It's how the MCP server gets tested.** Manual inspector clicking doesn't exercise the lease logic under concurrency; running two of these at once does.
-2. **It's the demo fallback.** If Copilot is queued, rate-limited, or misbehaving on the day, this proves the agent loop end to end with no seat required — same server, same tools, three seconds.
+2. **It demonstrates the loop.** This proves agent coordination end to end against the same server and tools in three seconds.
 
 Build it early rather than late. Like several of our fallbacks, it costs nothing extra because we need it for development anyway.
 

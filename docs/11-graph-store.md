@@ -4,14 +4,14 @@ Where the graph lives between runs, and how it is retrieved fast.
 
 ## Why a store at all
 
-The pipeline is expensive and event-triggered; reads are cheap and constant. The UI polls it, the MCP server answers agent queries from it, and Copilot dispatch reads it. None of those should trigger inference, hit the GitHub API, or recompute a topological sort.
+The pipeline is expensive and event-triggered; reads are cheap and constant. The UI polls it and the MCP server answers agent queries from it. Neither should trigger inference, hit the GitHub API, or recompute a topological sort.
 
 So: **the pipeline writes, everything else reads.**
 
 ```
    pipeline run ──write──►  ┌───────────┐  ◄──read──  web UI
                             │   store   │  ◄──read──  MCP server
-   GitHub blocked_by ◄──────┤  + cache  │  ◄──read──  Copilot dispatch
+   GitHub blocked_by ◄──────┤  + cache  │
         (applied edges)     └───────────┘
 ```
 
@@ -40,7 +40,7 @@ The reduction is lossy — A→C carries its own rationale, evidence and provena
 
 ## Recommended: Postgres + Drizzle
 
-Serverless-compatible, which matters because the MCP server must be an HTTP endpoint Copilot can reach — a file-based database breaks the moment that deploys. Neon's free tier is plenty; a hackathon backlog is kilobytes.
+Serverless-compatible, which matters because the MCP server can be an HTTP endpoint for external clients. Neon's free tier is plenty; a hackathon backlog is kilobytes.
 
 Put everything behind a `GraphStore` interface so this is swappable. `DEMO_MODE=1` binds the same interface to committed JSON fixtures with no database at all, which is what lets a judge run the app with no credentials.
 

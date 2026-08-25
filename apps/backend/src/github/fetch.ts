@@ -4,7 +4,6 @@ import { getToken, invalidateToken } from './token.js';
 
 /**
  * GitHub is a DATA SOURCE, not a data store. Everything in this file reads.
- * The only write in the whole project is Copilot assignment (copilot.ts).
  */
 
 const API_VERSION = '2026-03-10';

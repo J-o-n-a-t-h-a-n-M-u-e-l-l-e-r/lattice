@@ -8,9 +8,9 @@ A second binding of the same interface reads committed JSON fixtures — that's 
 
 **Why it matters**
 
-The pipeline writes; **everything else reads**. The UI polls the store, the MCP server answers agent queries from it, dispatch reads it. None of those should trigger inference, call the GitHub API, or recompute a topological sort.
+The pipeline writes; **everything else reads**. The UI polls the store and the MCP server answers agent queries from it. Neither should trigger inference, call the GitHub API, or recompute a topological sort.
 
-Postgres rather than SQLite because the MCP server has to be an HTTP endpoint Copilot can reach, and a file-based database breaks the moment that deploys (#52). Neon's free tier is plenty — a hackathon backlog is kilobytes.
+Postgres rather than SQLite because the MCP server can be an HTTP endpoint for external clients, and a file-based database breaks the moment that deploys (#52). Neon's free tier is plenty — a hackathon backlog is kilobytes.
 
 **This store is the only home of the graph.** Lattice never writes to GitHub, so if it isn't here, it doesn't exist.
 

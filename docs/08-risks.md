@@ -30,20 +30,14 @@ Put a **"What this doesn't do yet"** section in the README. The judges said unfi
 7. **The graph is invisible outside Lattice.** Because we never write to GitHub, the dependency information doesn't appear in GitHub's UI and other tools don't inherit it.
    *Mitigation:* a deliberate trade for being non-destructive — say so rather than apologising for it. The graph is genuinely retrievable: a deployed interactive app anyone can open, and `explain_dependency` over MCP for agents. A team that wants the edges in GitHub writes them by hand, and Lattice picks them up as immutable ground truth.
 
-8. **Copilot latency** — PRs take minutes.
-   *Mitigation:* start the run before presenting; show one in flight and one already open.
-
-9. **Branch stacking creates rebase pain** on squash-merge.
-   *Mitigation:* `wait` is the default policy; stack one level only; demo it once and name the cost out loud.
-
-10. **"GitHub will just build this."**
+8. **"GitHub will just build this."**
    *Mitigation:* lead with *the scheduler for agents*, not the picture. GitHub shipped the dependency *fields* and still has no graph view, no inference, and nothing that tells an agent what to work on next. The visualisation is the surface; the schedule is the product.
 
-11. **We depend on an anonymous stealth model.** Ox Alpha is a preview and can vanish without notice; its provider is unnamed and retains prompts (though not for training).
+9. **We depend on an anonymous stealth model.** Ox Alpha is a preview and can vanish without notice; its provider is unnamed and retains prompts (though not for training).
     *Mitigation:* the entire model layer sits behind one file and one env var, so switching providers is minutes. Say the privacy position out loud in the README — our backlog is public, so it costs us nothing, but anyone pointing Lattice at a private backlog is sending issue text to a third party. Naming that is evidence of judgement, not a weakness.
 
-12. **A judge can't run it.**
-    *Mitigation:* `DEMO_MODE=1` with a committed fixture snapshot — no GitHub token, no Copilot seat, no OpenRouter key, and they still see the whole app. **This is the single highest-ROI hour in the plan** and it maps directly onto the "Craft" criterion.
+10. **A judge can't run it.**
+    *Mitigation:* `DEMO_MODE=1` with a committed fixture snapshot — no GitHub token or OpenRouter key, and they still see the whole app. **This is the single highest-ROI hour in the plan** and it maps directly onto the "Craft" criterion.
 
 ---
 
@@ -56,8 +50,6 @@ Put a **"What this doesn't do yet"** section in the README. The judges said unfi
 | **Ox Alpha withdrawn** (stealth preview, no stability guarantee) | Swap `LATTICE_MODEL` to any OpenAI-compatible OpenRouter model. The forced-tool + Zod path works on both | minutes |
 | **OpenRouter 429 / daily quota exhausted** | The disk cache means re-runs cost nothing; `DEMO_MODE=1` serves the committed fixture. Buy $10 of credits for 1000/day. | 0 — if the cache exists |
 | dagre layout looks bad | Swap in elkjs behind the same `nodes + edges → positions` interface | ~20 min |
-| Copilot dispatch fails at demo time | Dry-run payload view + `scripts/agent.ts` local MCP agent | 0 — built earlier |
-| Copilot can't reach the MCP server (no OAuth, secret naming, tunnel) | Demo MCP through Claude Code or MCP Inspector — same server, same tools | 0 |
 | A teammate is lost for a day | The Day-1 path alone is a submission | — |
 
 Notice how many of these cost zero: that's deliberate. **The fallback is usually a thing we built early for development reasons anyway.** Where that's true, build the fallback first.

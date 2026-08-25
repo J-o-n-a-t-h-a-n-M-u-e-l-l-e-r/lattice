@@ -15,7 +15,6 @@ Lattice reads a repo's issues, infers the dependency graph between them, stores 
 | MCP tools | [`docs/04-mcp-surface.md`](../docs/04-mcp-surface.md) |
 | the store / caching | [`docs/11-graph-store.md`](../docs/11-graph-store.md) |
 | the REST API | [`docs/12-rest-api.md`](../docs/12-rest-api.md) |
-| Copilot dispatch | [`docs/05-copilot-dispatch.md`](../docs/05-copilot-dispatch.md) |
 
 ## The rules that matter most
 

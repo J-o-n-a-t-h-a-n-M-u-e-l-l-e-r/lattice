@@ -8,7 +8,7 @@ Computed over open issues only, so closed blockers vanish and the graph stays li
 
 **Why it matters**
 
-Wave 0 is the parallelizable frontier — the answer to "what can we start right now?", which is the question the whole project exists to answer. It drives the graph view's column layout, the `list_ready_work` MCP tool, and the Copilot dispatch selection.
+Wave 0 is the parallelizable frontier — the answer to "what can we start right now?", which is the question the whole project exists to answer. It drives the graph view's column layout and the `list_ready_work` MCP tool.
 
 The "open issues only" detail is what makes the tool feel alive rather than static: close an issue, re-run, and things move into wave 0. That's the closing beat of the demo.
 

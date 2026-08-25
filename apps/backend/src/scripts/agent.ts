@@ -3,12 +3,12 @@ import { defaultRepo } from '../config.js';
 import * as tools from '../mcp/tools.js';
 
 /**
- * A local agent that drives the same loop Copilot does: claim, read the
- * briefing, report progress, see what it unblocked.
+ * A local agent that claims work, reads the briefing, reports progress, and
+ * sees what it unblocked.
  *
  * Two jobs. It is how the lease logic gets tested under concurrency (run it
- * with --agents 3), and it is the demo fallback when Copilot is queued -
- * same tools, three seconds, no seat required.
+ * with --agents 3), and it demonstrates the MCP coordination loop in three
+ * seconds without needing a hosted agent.
  */
 const args = process.argv.slice(2);
 const value = (n: string) => { const i = args.indexOf(`--${n}`); return i >= 0 ? args[i + 1] : undefined; };

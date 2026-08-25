@@ -9,7 +9,7 @@
 | **0:35** | **It resolved a contradiction by itself.** The run found a cycle, cut the lowest-confidence link, and kept going. *"It never stopped to ask us — but it wrote down what it cut and why."* | Run detail: the cycle, the victim, the alternatives |
 | **0:55** | **The graph.** Wave columns, critical path in red. Click #12 → panel: *unblocks 7*, its blockers, the evidence for each edge. Click through to the issue on GitHub. | The app — this is the centrepiece, give it room |
 | **1:15** | **Why that edge exists.** Open one dependency: rationale, confidence, and the verbatim quote from the issue that justifies it. *"It didn't guess — and it can show you where it got that."* | Edge detail |
-| **1:30** | **Dispatch.** Three Copilot agents on wave 0 at once — independent by construction — one stacked on another's branch. | Dispatch panel |
+| **1:30** | **The agent loop.** Three local agents claim wave-0 work at once — independent by construction — and receive graph-derived briefings. | Terminal |
 | **1:45** | **The loop closes.** `claim_next_issue` → briefing → `report_progress` → a node turns green, two more turn ready. Then an agent calls `report_dependency` and the graph *learns* an edge nobody knew about. | Terminal + graph side by side |
 | **2:00** | **The line.** *"One expensive reasoning pass. Amortized over every agent run after it."* | |
 
@@ -25,11 +25,9 @@
 
 4. **Never demo off a cold API.** Everything reads from the store, and the model responses are cached — so the live run at 0:15 is fast and cannot fail on a network problem. Have a completed run already in the store as well.
 
-## Timing the Copilot leg
+## Demonstrating the agent loop
 
-Copilot PRs take minutes, not seconds. **Start the real run about 20 minutes before you present**, then cut to it. Show one in flight and one already open.
-
-If it's misbehaving, `scripts/agent.ts` runs the same MCP loop locally in three seconds. Same server, same tools, no seat required.
+`scripts/agent.ts` runs the MCP loop locally in three seconds: agents claim work, receive their briefings, and report the graph changes they cause.
 
 ## The one-sentence version
 

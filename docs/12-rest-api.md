@@ -43,7 +43,6 @@ Why an edge exists. The REST twin of the `explain_dependency` MCP tool — **the
 ```
 POST /api/runs           { repo }        -> { run_id, status }   # manual trigger
 POST /api/webhook                        -> 202                  # GitHub issue events
-POST /api/dispatch       { repo, issues } -> { assigned: [...] }  # Copilot
 ```
 
 ## Conventions

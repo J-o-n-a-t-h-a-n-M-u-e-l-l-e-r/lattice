@@ -11,7 +11,7 @@ Five people, five lanes. The lanes are chosen so that **the seams between them a
 | **I** | Inference | `apps/backend/src/infer/**`, triggers | store in, store out |
 | **S** | Graph & scheduling | `apps/backend/src/graph/**` | pure functions; edges in, schedule out |
 | **U** | Web UI | `apps/web/**` | **consumes the REST API only** — no DB, no tokens |
-| **M** | MCP & dispatch | `apps/backend/src/mcp/**`, `github/copilot.ts` | schedule (in), GitHub assignment (out) |
+| **M** | MCP | `apps/backend/src/mcp/**`, `scripts/agent.ts` | schedule in, agent coordination out |
 
 Six labels, five people — **F is shared setup done together in hour one**, then everyone moves into their lane.
 
@@ -19,11 +19,11 @@ Six labels, five people — **F is shared setup done together in hour one**, the
 
 | Person | Lane | Start with | Then, in order |
 |---|---|---|---|
-| 1 | **G** — GitHub I/O | #5 ingest | #6 → #53 REST API → #37 → #39 |
+| 1 | **G** — GitHub I/O | #5 ingest | #6 → #53 REST API |
 | 2 | **I** — Inference | #13 LLM extraction | #14 → #15 → #16 → #46 |
 | 3 | **S** — Graph & scheduling | #17 Tarjan | #18 → #19 → #20 → #21 → #51 |
 | 4 | **U** — Web UI | #4 fixture *(first, ~30 min)* | #24 → #25 → #26 → #49 → #50 |
-| 5 | **M** — MCP & store | #3 store | #47 → #30 → #36 → #32 → #31 → #33 → #34/#35 → #40 |
+| 5 | **M** — MCP & store | #3 store | #47 → #30 → #36 → #32 → #31 → #33 → #34/#35 |
 
 Hour 0–1 is everyone together on **#1** (types contract) and **#2** (scaffold). #1 blocks all five lanes, so settle it at a whiteboard rather than assigning it.
 
@@ -50,11 +50,11 @@ The graph lane (S) is pure — no I/O — so it never conflicts with anyone and 
 ```
 Hour 0-1   EVERYONE:  repo, scaffold, types.ts, seed the dogfood issues
            ─────────────────────────────────────────────────────────────
-Hour 1+    G: ingest ──────────► deps + hierarchy ──► Copilot dispatch
+Hour 1+    G: ingest ──────────► deps + hierarchy ──► REST API
            I: deterministic ───► candidates ──► LLM ──► validate ──► merge
            S: SCC ────────────► acyclic ────► schedule ──► blast radius
            U: shell ──────────► graph view ──► run history
-           M: mcp route ──────► tools ──────► copilot dispatch
+           M: mcp route ──────► tools ──────► local agent loop
 ```
 
 The first checkpoint that matters: **the graph view renders the fixture, and `npx tsx scripts/analyze.ts` produces a real run in the store.** Those two meeting is the moment the project exists, and it arrives around hour three.
@@ -70,7 +70,7 @@ Five people plus several agents in one repo. These are not suggestions:
 
 ## Stop-loss
 
-**If it is end of Day 1 and the MCP or Copilot legs haven't started, freeze the scope.**
+**If it is end of Day 1 and the MCP leg hasn't started, freeze the scope.**
 
 Ingest → infer → graph, deployed and interactive, is a complete, honest, submittable project. Spend Day 2 on polish, the README and the demo, not on opening a new leg.
 
