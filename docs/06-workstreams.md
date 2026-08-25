@@ -17,13 +17,21 @@ Six labels, five people — **F is shared setup done together in hour one**, the
 
 ## Suggested assignment for five
 
-| Person | Lane(s) | Rationale |
-|---|---|---|
-| 1 | **G** — GitHub I/O | Self-contained, API-heavy, unblocks I early. |
-| 2 | **I** — Inference | The longest pole and the highest-risk. Give it a full person. |
-| 3 | **S** — Graph & scheduling | Pure functions, testable in isolation, zero merge conflicts with anyone. |
-| 4 | **U** — Web UI | Starts against a fixture in hour one, never blocked. |
-| 5 | **M** — MCP & Copilot | Depends on S's output shape but not its implementation; can stub. |
+| Person | Lane | Start with | Then, in order |
+|---|---|---|---|
+| 1 | **G** — GitHub I/O | #5 ingest | #6 → #7 → #48 → #9 |
+| 2 | **I** — Inference | #11 symbol index | #12 → #13 → #14 → #15 → #16 → #46 |
+| 3 | **S** — Graph & scheduling | #17 Tarjan | #18 → #19 → #20 → #21 → #22 → #23 |
+| 4 | **U** — Web UI | #4 fixture *(first, ~30 min)* | #24 → #25 → #49 → #26 → #50 |
+| 5 | **M** — MCP & store | #3 store | #47 → #30 → #36 → #32 → #31 → #33 → #34/#35 → #37–40 |
+
+Hour 0–1 is everyone together on **#1** (types contract) and **#2** (scaffold). #1 blocks all five lanes, so settle it at a whiteboard rather than assigning it.
+
+**#2 is on the critical path** — the inference chain `#11 → #12 → #13 → #14 → #15 → #16 → #46` is seven deep and holds both `size:L` issues. Nobody else has a chain that long.
+
+**#4 before anything else for person 4.** A 30-minute hand-written fixture is what stops persons 4 and 5 idling for half a day.
+
+Closed as superseded: **#8** receipt comments, **#10** regex extractors, **#27** review queue, **#28** cycle-resolution UI, **#29** approval wiring. Each carries a tombstone explaining what replaced it.
 
 ## Why this parallelizes cleanly
 

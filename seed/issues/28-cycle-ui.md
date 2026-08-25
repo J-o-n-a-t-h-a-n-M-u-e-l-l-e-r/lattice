@@ -1,26 +1,13 @@
-# [U] Cycle resolution UI
+# [U] ~~Cycle resolution UI~~ (superseded)
 <!-- labels: lane:ui,size:M -->
-**What**
+**This issue is obsolete. Do not implement it.**
 
-A section pinned to the top of `/review` rendering each detected cycle as a readable path — `#12 → #19 → #23 → #12` — with the algorithm's chosen victim preselected and up to three alternatives as radio buttons. The human picks which link to cut. Affected edges cannot be approved until the cycle is resolved.
+The original plan asked a human to choose which link to cut when the pipeline found a dependency cycle.
 
-Cycles marked `unresolvable_requires_human` (every edge human-asserted) get a distinct treatment: no preselection, and a note explaining that the tool refused to guess.
+**Cut — cycle breaking is fully automatic.** See #18 and `docs/03-graph-scheduling.md`.
 
-**Why it matters**
+It is safe to automate because of the weighting: `given` edges (already recorded in GitHub) and `pinned` edges are immutable, so the algorithm can only ever cut something the model inferred. The worst case is that we mis-order our own suggestions and the next run corrects it.
 
-This is the single best human-checkpoint moment in the project. The machine found a contradiction it could not resolve on its own and escalated with options — that is exactly what "agents doing meaningful work with sensible human checkpoints" looks like, and it demos in fifteen seconds.
+Cycles where *every* edge is `given` are not guessed at — the component is excluded from scheduling and flagged `unresolvable_given_cycle`.
 
-It's also honest about a real limitation: minimum feedback arc set is NP-hard, our heuristic is greedy, and it can cut the wrong edge. Surfacing that rather than hiding it is what makes the rest of the tool's claims credible.
-
-**Scope**
-
-- `app/components/review/Cycles.tsx`
-
-**Done when**
-
-- [ ] Cycles render as readable paths, not sets
-- [ ] Alternatives are selectable and the choice persists
-- [ ] Affected edges are gated until resolved
-- [ ] `unresolvable_requires_human` is visually distinct
-
-**Depends on:** the review queue in #27, and the `CycleBreak` records produced by #18.
+Every break is still recorded with the cycle path, the victim and the alternatives. Displaying that record is part of **#49** (`/runs`) — read-only, after the fact.

@@ -1,24 +1,9 @@
-# [G] Receipt comments on applied edges
+# [G] ~~Receipt comments on applied edges~~ (superseded)
 <!-- labels: lane:github-io,size:S -->
-**What**
+**This issue is obsolete. Do not implement it.**
 
-When an edge is written, post a comment on the blocked issue recording *why*: the dependency type, confidence, which model inferred it, who approved it, the rationale, and the verbatim evidence quote. Template is in `docs/02-inference-pipeline.md#the-receipt-comment`.
+The original plan posted a comment on each blocked issue explaining why the edge existed, since GitHub's dependency API stores no reasoning.
 
-**Why it matters**
+**Cut**, for three reasons: it's noise on every issue in the repo, it doesn't survive re-runs cleanly (the pipeline now runs on every issue event, so comments would multiply or need reconciling), and it turns a quiet background process into a notification spammer.
 
-GitHub's dependency API stores the edge but has nowhere to put the reasoning. Without this, someone looking at a `Blocked by #12` badge six weeks from now has no idea whether a human decided that or a model guessed it.
-
-It is also free demo value: the receipt is visible to anyone who never runs Lattice, and it's the visual proof that a human approved the edge rather than a script spraying them in.
-
-**Scope**
-
-- `src/lib/github/write.ts`
-
-**Done when**
-
-- [ ] A comment is posted for each successfully applied edge
-- [ ] It names the approver and the model
-- [ ] It includes the evidence quote
-- [ ] It is suppressed in `--dry-run`
-
-**Depends on:** the write-back path in #7 — this hangs off the same loop.
+The reasoning still exists and is still retrievable — it lives in the store and comes back through the `explain_dependency` MCP tool and the `/runs` UI. See `docs/11-graph-store.md`.

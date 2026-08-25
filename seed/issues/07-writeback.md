@@ -1,19 +1,25 @@
-# [G] Idempotent, rate-limited `blocked_by` write-back
+# [G] Automatic `blocked_by` write-back, with pruning
 <!-- labels: lane:github-io,size:M -->
 **What**
 
-`src/lib/github/write.ts` — take approved edges and POST them to `/repos/{o}/{r}/issues/{n}/dependencies/blocked_by` with header `X-GitHub-Api-Version: 2026-03-10`.
+At the end of every run, reconcile GitHub's native dependencies with what the pipeline currently infers. Three sets:
 
-The full shape is in `docs/09-github-api-notes.md#write-path-shape`. Follow it.
+- **Add** — inferred edges at or above `LATTICE_WRITE_THRESHOLD` (default 0.80) that GitHub doesn't have yet
+- **Prune** (#48) — edges *we* previously wrote (`authored_by = 'lattice'`) that are no longer inferred
+- **Never touch** — `given` edges, whoever created them
+
+Full shape in `docs/09-github-api-notes.md#write-path-shape`.
 
 **Why it matters**
 
-This is the money shot of the demo — the moment GitHub itself becomes the source of truth and the project stops being a side database. It is also the single most failure-prone call in the repo:
+This is the money shot of the demo — the moment GitHub itself becomes the source of truth and the project stops being a side database. **Nobody approves it**; the run applies it.
+
+That makes the failure modes matter more than they used to:
 
 - The body is `{ "issue_id": <databaseId> }`. **Not the `#number`.**
-- The endpoint has a *secondary* rate limit, invisible in `X-RateLimit-Remaining`. Space writes ~1.2s apart and back off on 403/429. Bursting 30 edges during a live demo is exactly how this fails on stage.
-- A 422 usually means GitHub detected a cycle against edges already in the repo. Record it as `github_rejected_maybe_cycle` and **continue the batch** — do not crash.
-- Always GET existing dependencies and diff first.
+- The endpoint has a *secondary* rate limit, invisible in `X-RateLimit-Remaining`. Space writes ~1.2s apart and back off on 403/429.
+- A 422 usually means GitHub detected a cycle against edges already in the repo. Record `github_rejected_cycle` and **continue the batch**.
+- **Pruning is not optional.** An automatic writer that only ever adds accretes stale edges forever. But prune only what we authored — deleting a dependency a human recorded is the single worst thing this tool could do.
 
 **Scope**
 
@@ -21,9 +27,12 @@ This is the money shot of the demo — the moment GitHub itself becomes the sour
 
 **Done when**
 
-- [ ] Running it twice creates no duplicate edges
-- [ ] 403/429 backs off and retries rather than failing the run
-- [ ] 422 is recorded and the batch continues
+- [ ] Running twice creates no duplicates and makes no redundant calls
+- [ ] Edges below the threshold are never written
+- [ ] Stale Lattice-authored edges are removed
+- [ ] A `given` edge is never modified or deleted, proven by a test
+- [ ] 403/429 backs off; 422 is recorded and the batch continues
 - [ ] Uses `databaseId`, verified against a real issue
+- [ ] `LATTICE_WRITE_THRESHOLD=1.0` results in zero writes
 
-**Depends on:** the shared types contract in #1, and the existing-dependency read in #6 for the diff.
+**Depends on:** the types contract in #1, existing-dependency reads in #6, and `authored_by` from the store in #3.

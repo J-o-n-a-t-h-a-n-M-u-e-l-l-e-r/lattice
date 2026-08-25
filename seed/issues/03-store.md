@@ -1,26 +1,34 @@
-# [F] Snapshot store for `.lattice/`
-<!-- labels: lane:foundation,size:S -->
+# [F] The graph store — schema and `GraphStore` interface
+<!-- labels: lane:foundation,size:M -->
 **What**
 
-`src/lib/store.ts` — typed read/write helpers for the four JSON artifacts: `raw.json` (ingest cache), `analysis.json` (proposed edges plus provenance), `decisions.json` (the human approve/reject log), and `leases.json` (agent claims).
+Postgres via Drizzle, behind a `GraphStore` interface that everything reads through. Tables: `runs`, `issues`, `edges`, `rejections`, `cycle_breaks`, `schedule`, `llm_cache`, `leases`. Full schema sketch in `docs/11-graph-store.md`.
 
-Handle the file-missing case gracefully — a fresh clone has none of these. Writes should be atomic (write to a temp file, rename) because the MCP server and the web app can both touch `leases.json`.
+A second binding of the same interface reads committed JSON fixtures — that's `DEMO_MODE`, and it means a judge with no database and no credentials still sees the whole app.
 
 **Why it matters**
 
-This is the seam between every workstream. The inference pipeline writes `analysis.json`, the UI reads it, the MCP server reads the schedule derived from it, and the approval flow appends to `decisions.json`.
+The pipeline writes; **everything else reads**. The UI polls the store, the MCP server answers agent queries from it, dispatch reads it. None of those should trigger inference, call the GitHub API, or recompute a topological sort.
 
-`decisions.json` is deliberately **committed to git**, unlike the other three. It is the record of a human overruling a model, and it is part of what we submit as evidence of collaboration. Make sure `.gitignore` doesn't swallow it.
+Postgres rather than SQLite because the MCP server has to be an HTTP endpoint Copilot can reach, and a file-based database breaks the moment that deploys. Neon's free tier is plenty — a hackathon backlog is kilobytes.
+
+Two columns are load-bearing and easy to overlook:
+
+- **`edges.authored_by`** — `'lattice'` or `'given'`. Writes are automatic, so the pipeline must be able to remove stale edges it wrote without ever touching one a human or another tool created. Without this column an automatic writer eventually becomes a vandal.
+- **`edges.pinned` / `edges.suppressed`** — the human nudge path (#50). The UI for them can wait, but add the columns now: retrofitting a column that changes pruning semantics is far worse than carrying two unused booleans.
+
+Keep a `latest_run_id` per repo so reads are consistent — a read must never see half of one run and half of the next.
 
 **Scope**
 
-- `src/lib/store.ts`
+- `src/store/schema.ts`, `src/store/index.ts`, `src/store/fixtures.ts`
 
 **Done when**
 
-- [ ] All four artifacts have typed read and write helpers
-- [ ] Missing files return sensible empty values rather than throwing
-- [ ] Writes are atomic
-- [ ] `decisions.json` appends rather than overwrites
+- [ ] All tables exist with migrations
+- [ ] `GraphStore` covers every read the UI and MCP need
+- [ ] The fixture binding satisfies the same interface with no database
+- [ ] `latest_run_id` makes reads consistent
+- [ ] `authored_by`, `pinned`, `suppressed` present
 
-**Depends on:** the shared types contract in #1 — every helper is typed against it.
+**Depends on:** the shared types contract in #1.

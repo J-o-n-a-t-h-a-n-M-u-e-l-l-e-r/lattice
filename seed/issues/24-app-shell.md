@@ -2,22 +2,24 @@
 <!-- labels: lane:ui,size:S -->
 **What**
 
-The two routes (`/` for the graph, `/review` for the approval queue), shared layout, navigation, and a single deliberate visual pass: typography, spacing, a restrained palette, and states for loading, empty, and error.
+Two routes — `/` for the graph, `/runs` for run history — shared layout, navigation, and a single deliberate visual pass: typography, spacing, a restrained palette, and states for loading, empty and error.
 
 **Why it matters**
 
-"Craft" is a scored criterion and this is the cheapest place to earn it. A tool that looks considered reads as finished even when parts are stubbed — and the judges explicitly said a half-built thing with clear thinking beats a polished thing with none, which cuts both ways: clear thinking should *look* clear.
+"Craft" is a scored criterion and this is the cheapest place to earn it. A tool that looks considered reads as finished even when parts are stubbed.
 
-Empty and error states matter more than usual here, because a judge running this fresh will hit them first. "No analysis yet — run `npm run analyze`" is a better first impression than a blank screen.
+Empty and error states matter more than usual, because a judge running this fresh hits them first. *"No runs yet — the pipeline triggers on issue events, or run `npm run analyze`"* is a better first impression than a blank screen.
+
+Note there is **no `/review`** — the pipeline is unsupervised. `/runs` is the accountability surface instead.
 
 **Scope**
 
-- `app/layout.tsx`, `app/page.tsx` shell, `app/review/page.tsx` shell, shared components
+- `app/layout.tsx`, route shells, shared components
 
 **Done when**
 
-- [ ] Both routes render with real navigation between them
-- [ ] Loading, empty, and error states exist and read well
-- [ ] Reads `analysis.json`, falling back to the committed fixture
+- [ ] Both routes render with real navigation
+- [ ] Loading, empty and error states exist and read well
+- [ ] Reads through `GraphStore`, falling back to the committed fixture
 
-**Depends on:** the scaffold in #2. It reads the fixture from #4, so it is never blocked on the inference pipeline.
+**Depends on:** the scaffold in #2 and the store interface in #3. It reads the fixture from #4, so it is never blocked on the inference pipeline.
