@@ -5,6 +5,8 @@ import { Logo } from './Logo';
 import { PitchSlideDual } from './PitchSlideDual';
 import styles from './PitchDeck.module.css';
 
+const LAST_SLIDE = 3;
+
 type IssueCard = {
   number: number;
   title: string;
@@ -57,15 +59,6 @@ function Arrow({ direction }: { direction: 'left' | 'right' }) {
   );
 }
 
-function Mark() {
-  return (
-    <svg className={styles.mark} viewBox="0 0 20 20" aria-hidden="true">
-      <path d="M10 1.7 17.3 5.9v8.2L10 18.3l-7.3-4.2V5.9L10 1.7Z" />
-      <path d="M10 1.7v16.6M2.7 5.9l14.6 8.2M17.3 5.9 2.7 14.1" />
-    </svg>
-  );
-}
-
 function IssueOpenedIcon() {
   return (
     <svg viewBox="0 0 20 20" aria-hidden="true">
@@ -77,27 +70,25 @@ function IssueOpenedIcon() {
 
 export function PitchDeck() {
   const [slide, setSlide] = useState(0);
-  const [introStage, setIntroStage] = useState(0);
-  const [videoReady, setVideoReady] = useState(false);
-  const [videoMissing, setVideoMissing] = useState(false);
+  const [graphStage, setGraphStage] = useState(0);
   const [blackout, setBlackout] = useState(false);
   const presenterChannel = useRef<BroadcastChannel | null>(null);
-  const deckState = useRef({ slide, introStage, blackout });
-  deckState.current = { slide, introStage, blackout };
-  const graphOrganized = introStage > 0;
-  const titleStage = introStage === 2;
+  const deckState = useRef({ slide, graphStage, blackout });
+  deckState.current = { slide, graphStage, blackout };
+  const graphOrganized = graphStage > 0;
+  const titleStage = graphStage === 2;
 
   const next = () => {
-    if (slide === 0 && introStage < 2) {
-      setIntroStage((stage) => stage + 1);
+    if (slide === 1 && graphStage < 2) {
+      setGraphStage((stage) => stage + 1);
       return;
     }
-    setSlide((current) => Math.min(current + 1, 3));
+    setSlide((current) => Math.min(current + 1, LAST_SLIDE));
   };
 
   const previous = () => {
-    if (slide === 0 && introStage > 0) {
-      setIntroStage((stage) => stage - 1);
+    if (slide === 1 && graphStage > 0) {
+      setGraphStage((stage) => stage - 1);
       return;
     }
     setSlide((current) => Math.max(current - 1, 0));
@@ -123,9 +114,9 @@ export function PitchDeck() {
         channel.postMessage({ source: 'lattice-pitch-deck', type: 'state', ...deckState.current });
       }
       if (data.type === 'go-to') {
-        const destination = Math.max(0, Math.min(3, Number(data.slide)));
+        const destination = Math.max(0, Math.min(LAST_SLIDE, Number(data.slide)));
         setSlide(destination);
-        setIntroStage(destination === 0 ? Math.max(0, Math.min(2, Number(data.introStage) || 0)) : 0);
+        setGraphStage(destination === 1 ? Math.max(0, Math.min(2, Number(data.graphStage) || 0)) : 0);
       }
       if (data.type === 'blackout') setBlackout(Boolean(data.enabled));
     };
@@ -141,10 +132,10 @@ export function PitchDeck() {
       source: 'lattice-pitch-deck',
       type: 'state',
       slide,
-      introStage,
+      graphStage,
       blackout,
     });
-  }, [slide, introStage, blackout]);
+  }, [slide, graphStage, blackout]);
 
   useEffect(() => {
     const onKeyDown = (event: KeyboardEvent) => {
@@ -178,11 +169,28 @@ export function PitchDeck() {
 
     window.addEventListener('keydown', onKeyDown);
     return () => window.removeEventListener('keydown', onKeyDown);
-  }, [slide, introStage]);
+  }, [slide, graphStage]);
 
   return (
     <main className={styles.deck} aria-label="Lattice pitch deck">
       <section className={`${styles.slide} ${slide === 0 ? styles.active : ''}`} aria-hidden={slide !== 0}>
+        <div className={styles.playbookHeading}>
+          <h1>The One-Page Playbook</h1>
+        </div>
+
+        <ol className={styles.playbookList}>
+          <li><b>1</b><p><strong>Before 11:20:</strong> write the demo story, assign roles, create 5–8 small issues.</p></li>
+          <li><b>2</b><p><strong>Deploy before lunch:</strong> configure CI/CD and ship the thinnest working journey.</p></li>
+          <li><b>3</b><p><strong>Write the house rules (AGENTS.md):</strong> stack, conventions, build, and tests.</p></li>
+          <li><b>4</b><p><strong>One issue per agent.</strong> Clear acceptance criteria, constraints, own branch.</p></li>
+          <li><b>5</b><p><strong>Require a small PR</strong> with green tests before anything reaches main.</p></li>
+          <li><b>6</b><p><strong>Start with one or two agents;</strong> <span className={styles.playbookHighlight}>parallelize only independent work.</span></p></li>
+          <li><b>7</b><p><strong>Freeze at 16:00:</strong> rehearse the 3-minute pitch, record a backup, submit by 17:00.</p></li>
+        </ol>
+
+      </section>
+
+      <section className={`${styles.slide} ${slide === 1 ? styles.active : ''}`} aria-hidden={slide !== 1}>
         <div
           className={`${styles.issueField} ${graphOrganized ? styles.organized : ''} ${titleStage ? styles.titleStage : ''}`}
           role="group"
@@ -255,118 +263,116 @@ export function PitchDeck() {
         </div>
       </section>
 
-      <section className={`${styles.slide} ${slide === 1 ? styles.active : ''}`} aria-hidden={slide !== 1}>
-        <div className={styles.systemHeading}>
-          <p className={styles.kicker}>ONE PASS. A SHARED SCHEDULE.</p>
-          <h2>
-            Turn issue text into
-            <br />
-            <em>safe parallel work.</em>
-          </h2>
-          <p>
-            Lattice reads the backlog once, infers the graph, and gives every
-            teammate the same answer to “what should happen next?”
-          </p>
-        </div>
-
-        <div className={styles.systemMap}>
-          <div className={styles.systemRail} aria-hidden="true">
-            <span />
-            <span />
-            <span />
-          </div>
-          <article className={styles.systemStep}>
-            <div className={styles.stepNumber}>01</div>
-            <Mark />
-            <h3>Read, never write</h3>
-            <p>GitHub issues, native blockers, and sub-issues stay the source of truth.</p>
-            <span className={styles.stepFoot}>NO COMMENTS · NO LABELS · NO RISK</span>
-          </article>
-          <article className={styles.systemStep}>
-            <div className={styles.stepNumber}>02</div>
-            <Mark />
-            <h3>Infer, then prove</h3>
-            <p>Every suggested edge needs verbatim evidence. Invalid guesses are rejected.</p>
-            <span className={styles.stepFoot}>63 CANDIDATES → 40 VALIDATED</span>
-          </article>
-          <article className={styles.systemStep}>
-            <div className={styles.stepNumber}>03</div>
-            <Mark />
-            <h3>Schedule the team</h3>
-            <p>The graph becomes waves, a critical path, and MCP tools that agents can act on.</p>
-            <span className={styles.stepFoot}>GRAPH · REST · MCP</span>
-          </article>
-        </div>
-
-        <div className={styles.systemProof}>
-          <span>THE OUTCOME</span>
-          <p>
-            One expensive reasoning pass becomes the scheduler for every cheap
-            agent run after it.
-          </p>
-          <div>
-            <b>3</b><small>waves</small>
-            <b>16</b><small>blocking edges</small>
-            <b>0</b><small>GitHub writes</small>
-          </div>
-        </div>
-      </section>
-
       <section className={`${styles.slide} ${slide === 2 ? styles.active : ''}`} aria-hidden={slide !== 2}>
-        <div className={styles.demoHeading}>
-          <p className={styles.kicker}>THE DEMO / 01:20</p>
-          <h2>Watch the plan<br />become executable.</h2>
-          <p>From a GitHub issue edit to an agent-ready work wave, without a human triaging every handoff.</p>
+        <div className={styles.archHeading}>
+          <h2>The System Architecture</h2>
         </div>
-        <div className={styles.videoFrame}>
-          <video
-            controls
-            playsInline
-            preload="metadata"
-            className={`${styles.demoVideo} ${videoReady ? styles.videoReady : ''}`}
-            onLoadedData={() => setVideoReady(true)}
-            onError={() => setVideoMissing(true)}
-          >
-            <source src="/pitch/lattice-demo.mp4" type="video/mp4" />
-          </video>
-          {!videoReady && (
-            <div className={styles.videoFallback}>
-              <div className={styles.videoFallbackGraph} aria-hidden="true">
-                <i /><i /><i /><i /><i /><i />
-              </div>
-              <Mark />
-              <strong>{videoMissing ? 'DEMO RECORDING READY HERE' : 'LOADING DEMO RECORDING'}</strong>
-              <span>
-                {videoMissing
-                  ? 'Add lattice-demo.mp4 to apps/web/public/pitch/'
-                  : 'Issue event → validated graph → agent dispatch'}
-              </span>
-            </div>
-          )}
-          <div className={styles.videoStamp}>
-            <span>LIVE PATH</span>
-            <b>ISSUE → GRAPH → AGENT</b>
-          </div>
+
+        <div className={styles.archStage}>
+          <svg className={styles.archSvg} viewBox="0 0 1250 452" role="img"
+               aria-label="GitHub issues flow into LLM inference, which fills the graph database. The graph feeds a dependency view for people and an MCP server for agents, and the agents report back into the graph.">
+
+            <g className={styles.wire}>
+              <path d="M122 120H256" />
+              <path d="M346 120H478" />
+              <path d="M562 120H756" />
+              <path d="M562 126C644 152 700 182 700 250" />
+              <path d="M742 300H884" />
+              <path d="M978 300H1114" />
+              <path d="M1218 300H1232V416H640V300H664" />
+            </g>
+            <g className={styles.flow}>
+              <path d="M122 120H256" />
+              <path d="M346 120H478" />
+              <path d="M562 120H756" />
+              <path d="M562 126C644 152 700 182 700 250" />
+              <path d="M742 300H884" />
+              <path d="M978 300H1114" />
+              <path d="M1218 300H1232V416H640V300H664" />
+            </g>
+            <g className={styles.head}>
+              <path d="M250 113.5 260 120l-10 6.5" />
+              <path d="M472 113.5 482 120l-10 6.5" />
+              <path d="M750 113.5 760 120l-10 6.5" />
+              <path d="M693.5 248 700 258l6.5-10" />
+              <path d="M878 293.5 888 300l-10 6.5" />
+              <path d="M1108 293.5 1118 300l-10 6.5" />
+              <path d="M658 293.5 668 300l-10 6.5" />
+            </g>
+
+            <g className={styles.node}>
+              <path className={styles.glyphSolid} transform="translate(39,80) scale(3.42)"
+                    d="M12 .3a12 12 0 0 0-3.8 23.4c.6.1.8-.3.8-.6v-2.2c-3.3.7-4-1.6-4-1.6-.6-1.4-1.4-1.8-1.4-1.8-1-.7.1-.7.1-.7 1.2.1 1.8 1.2 1.8 1.2 1 1.8 2.8 1.3 3.5 1 0-.8.4-1.3.7-1.6-2.7-.3-5.5-1.3-5.5-5.9 0-1.3.5-2.4 1.2-3.2 0-.4-.5-1.6.2-3.2 0 0 1-.3 3.3 1.2a11.5 11.5 0 0 1 6 0c2.3-1.5 3.3-1.2 3.3-1.2.7 1.6.2 2.8.1 3.2.8.8 1.2 1.9 1.2 3.2 0 4.6-2.8 5.6-5.5 5.9.5.4.9 1.1.9 2.3v3.3c0 .3.2.7.8.6A12 12 0 0 0 12 .3Z" />
+              <text x="80" y="192">GitHub issues</text>
+            </g>
+
+            <g className={styles.node}>
+              <g className={styles.glyph}>
+                <rect x="266" y="86" width="68" height="68" rx="12" />
+                <rect x="283" y="103" width="34" height="34" rx="6" />
+                <path d="M283 86V74M300 86V74M317 86V74M283 154v12M300 154v12M317 154v12M266 103h-12M266 120h-12M266 137h-12M334 103h12M334 120h12M334 137h12" />
+              </g>
+              <text x="300" y="192">LLM inference</text>
+            </g>
+
+            <g className={styles.node}>
+              <g className={`${styles.glyph} ${styles.glyphKey}`}>
+                <ellipse cx="520" cy="92" rx="40" ry="14" />
+                <path d="M480 92v56c0 7.7 17.9 14 40 14s40-6.3 40-14V92" />
+                <path d="M480 120c0 7.7 17.9 14 40 14s40-6.3 40-14" />
+              </g>
+              <text x="520" y="192">The graph</text>
+            </g>
+
+            <g className={styles.node}>
+              <g className={styles.glyph}>
+                <circle cx="773" cy="94" r="12" />
+                <circle cx="827" cy="94" r="12" />
+                <circle cx="800" cy="148" r="12" />
+                <path d="M785 94h30M780 105l13 32M820 105l-13 32" />
+              </g>
+              <text x="800" y="192">Dependency view</text>
+              <text x="800" y="58" className={styles.branchTag}>01</text>
+            </g>
+
+            <g className={styles.node}>
+              <g className={styles.glyph}>
+                <path d="M682 272v-14M718 272v-14M670 272h60v16a30 30 0 0 1-60 0v-16ZM700 318v16" />
+              </g>
+              <text x="700" y="372">MCP</text>
+              <text x="742" y="262" className={styles.branchTag}>02</text>
+            </g>
+
+            <g className={styles.node}>
+              <g className={styles.glyph}>
+                <path d="M892 272h56M892 296h56M892 320h56" />
+                <circle cx="908" cy="272" r="7" />
+                <circle cx="930" cy="296" r="7" />
+                <circle cx="940" cy="320" r="7" />
+              </g>
+              <text x="930" y="372">Orchestration</text>
+            </g>
+
+            <g className={styles.node}>
+              <g className={styles.glyph}>
+                <rect x="1124" y="276" width="72" height="48" rx="10" />
+                <circle cx="1146" cy="300" r="6" />
+                <circle cx="1174" cy="300" r="6" />
+                <path d="M1160 276v-14M1204 288h14v24h-14M1116 288h-14v24h14" />
+              </g>
+              <text x="1160" y="372">Agent pool</text>
+            </g>
+
+            <text x="936" y="438" className={styles.wireLabel}>REPORTS BACK · THE GRAPH LEARNS</text>
+          </svg>
         </div>
-        <div className={styles.demoBeats}>
-          <span><b>00</b> Issue changes</span>
-          <span><b>20</b> Edges validated</span>
-          <span><b>45</b> Wave zero starts</span>
-          <span><b>75</b> Graph learns</span>
-        </div>
-        <p className={styles.demoClose}>
-          The graph is not a report. It is the coordination layer.
-        </p>
+
       </section>
 
       <section className={`${styles.slide} ${slide === 3 ? styles.active : ''}`} aria-hidden={slide !== 3}>
         <PitchSlideDual />
       </section>
 
-      <footer className={styles.pitchFooter}>
-        <span>Alba · Albert · Jonathan · Nicolas · Tong</span>
-        <span>Microsoft Summer Mini-Hackathon 2026</span>
-      </footer>
       <output className={styles.slideNumber} aria-label={`Slide ${slide + 1}`}>
         {String(slide + 1).padStart(2, '0')}
       </output>

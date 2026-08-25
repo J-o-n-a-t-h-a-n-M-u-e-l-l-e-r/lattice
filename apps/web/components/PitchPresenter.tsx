@@ -24,20 +24,12 @@ const slides = [
     },
   },
   {
-    title: 'One pass. A shared schedule.',
-    note: 'The point is not visualization. One reasoning pass produces an auditable schedule that humans and agents share.',
-  },
-  {
     title: 'The system architecture',
     note: 'Walk the spine left to right: GitHub in, one inference pass, one graph. Then the split — a view for people, MCP for agents. Land on the return arrow: agents report what they discover, so the graph gets better as work happens. Say out loud that nothing is written back to GitHub.',
   },
   {
     title: 'Top-down meets bottom-up.',
     note: 'Point at the screenshots, keep it short. Left: start from ready work, everything it unblocks lights up. Right: pick a target, the graph orders its prerequisites — agents follow that path.',
-  },
-  {
-    title: 'Watch it become executable.',
-    note: 'Play the 75-second recording. Show the issue event, evidence trail, work wave, and agent feedback loop.',
   },
 ];
 
@@ -146,24 +138,14 @@ function Preview({ index, graphStage = 0 }: { index: number; graphStage?: number
     );
   }
 
-  if (index === 4) {
-    return (
-      <div className={`${styles.previewSlide} ${styles.previewSystem}`}>
-        <div className={styles.previewKicker}>TWO WAYS TO READ ONE GRAPH</div>
-        <strong>TOP-DOWN MEETS<br /><em>BOTTOM-UP.</em></strong>
-        <div className={styles.previewSteps}>
-          <span>⇉<br /><b>WAVES</b></span>
-          <span>↳<br /><b>DEPS</b></span>
-        </div>
-      </div>
-    );
-  }
-
   return (
-    <div className={`${styles.previewSlide} ${styles.previewDemo}`}>
-      <div className={styles.previewKicker}>THE DEMO / 01:20</div>
-      <strong>WATCH THE PLAN<br />BECOME EXECUTABLE.</strong>
-      <div className={styles.previewVideo}>ISSUE → GRAPH → AGENT</div>
+    <div className={`${styles.previewSlide} ${styles.previewSystem}`}>
+      <div className={styles.previewKicker}>TWO WAYS TO READ ONE GRAPH</div>
+      <strong>TOP-DOWN MEETS<br /><em>BOTTOM-UP.</em></strong>
+      <div className={styles.previewSteps}>
+        <span>⇉<br /><b>WAVES</b></span>
+        <span>↳<br /><b>DEPS</b></span>
+      </div>
     </div>
   );
 }
