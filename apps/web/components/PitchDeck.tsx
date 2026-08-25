@@ -1,6 +1,7 @@
 'use client';
 
 import { useEffect, useRef, useState, type CSSProperties } from 'react';
+import { Logo } from './Logo';
 import styles from './PitchDeck.module.css';
 
 type IssueCard = {
@@ -245,7 +246,10 @@ export function PitchDeck() {
             })}
           </div>
           <div className={styles.projectTitleReveal} aria-hidden={!titleStage}>
-            <h1>Lattice</h1>
+            <div className={styles.projectTitleLockup}>
+              <Logo className={styles.projectLogo} />
+              <h1>Lattice</h1>
+            </div>
           </div>
         </div>
       </section>

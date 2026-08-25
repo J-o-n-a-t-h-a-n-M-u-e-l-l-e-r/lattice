@@ -1,6 +1,7 @@
 'use client';
 
 import { useEffect, useRef, useState } from 'react';
+import { Logo } from './Logo';
 import styles from './PitchPresenter.module.css';
 
 type DeckState = {
@@ -81,7 +82,10 @@ function Preview({ index, introStage = 0 }: { index: number; introStage?: number
             </span>
           ))}
         </div>
-        <div className={styles.previewProjectTitle}>Lattice</div>
+        <div className={styles.previewProjectTitle}>
+          <Logo />
+          <span>Lattice</span>
+        </div>
       </div>
     );
   }
