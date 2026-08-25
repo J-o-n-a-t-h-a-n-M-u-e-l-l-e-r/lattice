@@ -51,11 +51,24 @@ function Preview({ index, revealed = false }: { index: number; revealed?: boolea
       <div className={`${styles.previewSlide} ${styles.previewIntro}`}>
         <div className={`${styles.previewIssues} ${revealed ? styles.previewRevealed : ''}`}>
           <svg viewBox="0 0 100 100" preserveAspectRatio="none" aria-hidden="true">
-            <path d="M14 20 14 37M14 20 38 37M38 20 38 37M62 20 62 37M62 20 86 37M86 20 86 37" />
-            <path d="M14 41 10 58M14 41 30 58M38 41 30 58M38 41 50 58M62 41 50 58M62 41 70 58M86 41 70 58M86 41 90 58" />
-            <path d="M10 62 14 79M30 62 14 79M30 62 38 79M50 62 38 79M50 62 62 79M70 62 62 79M70 62 86 79M90 62 86 79" />
+            <defs>
+              <marker id="preview-graph-arrow" markerWidth="3" markerHeight="3" refX="2.4" refY="1.5" orient="auto">
+                <path d="M0 0 3 1.5 0 3Z" />
+              </marker>
+            </defs>
+            <path d="M23 18 C23 25 20 27 20 31 M23 18 C27 25 35 27 35 31 M42 18 C42 25 50 27 50 31 M61 18 C60 25 50 27 50 31 M61 18 C64 25 67 27 67 31 M81 18 C80 25 67 27 67 31 M81 18 C84 25 84 27 84 31" />
+            <path d="M20 36 C20 43 25 45 25 49 M35 36 C36 43 45 45 45 49 M50 36 C50 43 45 45 45 49 M50 36 C54 43 65 45 65 49 M67 36 C67 43 65 45 65 49 M67 36 C72 43 83 45 83 49 M84 36 C84 43 83 45 83 49" />
+            <path d="M25 54 C26 61 45 63 45 67 M45 54 C45 61 45 63 45 67 M65 54 C65 61 65 63 65 67 M83 54 C80 61 65 63 65 67 M65 54 C72 61 83 63 83 67" />
+            <path d="M45 72 C46 79 55 80 55 84 M65 72 C64 79 55 80 55 84 M83 72 C75 79 55 80 55 84" />
           </svg>
-          {['#01', '#05', '#13', '#17', '#19', '#25', '#30', '#37', '#49'].map((issue) => (
+          <div className={styles.previewWaveLabels} aria-hidden="true">
+            <span>Wave 0<small>ready now · 4</small></span>
+            <span>Wave 1<small>after wave 0 · 5</small></span>
+            <span>Wave 2<small>after wave 1 · 4</small></span>
+            <span>Wave 3<small>after wave 2 · 3</small></span>
+            <span>Wave 4<small>after wave 3 · 1</small></span>
+          </div>
+          {['#01', '#03', '#05', '#06', '#13', '#14', '#17', '#19', '#20', '#25', '#30', '#31', '#35', '#37', '#41', '#51', '#49'].map((issue) => (
             <span key={issue} aria-label={`GitHub issue ${issue}`}>
               <IssueOpenedIcon />
               {issue}

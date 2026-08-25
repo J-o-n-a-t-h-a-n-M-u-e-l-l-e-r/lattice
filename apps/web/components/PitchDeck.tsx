@@ -13,34 +13,34 @@ type IssueCard = {
   duration: string;
   phase: string;
   tilt: number;
-  tone?: 'blue' | 'coral';
 };
 
 const issues: IssueCard[] = [
-  { number: 1, title: 'Types contract', chaos: [12, 15], graph: [14, 18], drift: [15, -12], arc: [-10, 8], duration: '6.2s', phase: '-2.6s', tilt: -2 },
-  { number: 3, title: 'Graph store', chaos: [37, 12], graph: [38, 18], drift: [-14, 13], arc: [11, -8], duration: '7.4s', phase: '-5.1s', tilt: 3 },
-  { number: 5, title: 'Ingest issues', chaos: [62, 16], graph: [62, 18], drift: [13, 15], arc: [-9, -10], duration: '5.8s', phase: '-1.7s', tilt: -4 },
-  { number: 6, title: 'Read deps', chaos: [87, 13], graph: [86, 18], drift: [-16, -11], arc: [10, 9], duration: '7.8s', phase: '-4.3s', tilt: 5 },
-  { number: 13, title: 'LLM extraction', chaos: [12, 37], graph: [14, 39], drift: [14, 12], arc: [-11, -9], duration: '6.7s', phase: '-3.4s', tilt: 2 },
-  { number: 14, title: 'Validators', chaos: [38, 34], graph: [38, 39], drift: [-13, -15], arc: [9, 10], duration: '5.5s', phase: '-0.9s', tilt: -5 },
-  { number: 17, title: 'Tarjan', chaos: [63, 38], graph: [10, 60], drift: [16, -13], arc: [-10, 10], duration: '7.1s', phase: '-5.8s', tilt: 4, tone: 'coral' },
-  { number: 19, title: 'Work waves', chaos: [87, 35], graph: [30, 60], drift: [-15, 12], arc: [10, -8], duration: '6.4s', phase: '-2.2s', tilt: -3 },
-  { number: 20, title: 'Critical path', chaos: [12, 61], graph: [14, 81], drift: [13, -16], arc: [-9, 11], duration: '7.6s', phase: '-4.7s', tilt: 5, tone: 'coral' },
-  { number: 25, title: 'Graph view', chaos: [38, 57], graph: [62, 39], drift: [-14, 14], arc: [10, -9], duration: '5.9s', phase: '-3.1s', tilt: -4 },
-  { number: 30, title: 'MCP route', chaos: [62, 62], graph: [86, 39], drift: [15, -12], arc: [-11, 8], duration: '6.8s', phase: '-1.4s', tilt: 3 },
-  { number: 31, title: 'Agent tools', chaos: [88, 58], graph: [90, 60], drift: [-12, 15], arc: [8, -10], duration: '7.3s', phase: '-5.4s', tilt: -5 },
-  { number: 35, title: 'Simulate', chaos: [12, 83], graph: [50, 60], drift: [14, -13], arc: [-10, 9], duration: '5.7s', phase: '-2.8s', tilt: 4 },
-  { number: 37, title: 'Dispatch', chaos: [38, 79], graph: [70, 60], drift: [-15, -12], arc: [11, 8], duration: '7.7s', phase: '-4.1s', tilt: -3 },
-  { number: 41, title: 'Demo mode', chaos: [63, 85], graph: [38, 81], drift: [12, 16], arc: [-9, -11], duration: '6.1s', phase: '-0.5s', tilt: 2 },
-  { number: 49, title: 'Runs UI', chaos: [87, 81], graph: [62, 81], drift: [-16, -11], arc: [10, 8], duration: '7.2s', phase: '-3.7s', tilt: -4 },
-  { number: 51, title: 'Serialize', chaos: [62, 73], graph: [86, 81], drift: [13, 14], arc: [-10, -9], duration: '5.6s', phase: '-2s', tilt: 3 },
+  { number: 1, title: 'Types contract', chaos: [12, 15], graph: [23, 15], drift: [15, -12], arc: [-10, 8], duration: '6.2s', phase: '-2.6s', tilt: -2 },
+  { number: 3, title: 'Graph store', chaos: [37, 12], graph: [42, 15], drift: [-14, 13], arc: [11, -8], duration: '7.4s', phase: '-5.1s', tilt: 3 },
+  { number: 5, title: 'Ingest issues', chaos: [62, 16], graph: [61, 15], drift: [13, 15], arc: [-9, -10], duration: '5.8s', phase: '-1.7s', tilt: -4 },
+  { number: 6, title: 'Read deps', chaos: [87, 13], graph: [81, 15], drift: [-16, -11], arc: [10, 9], duration: '7.8s', phase: '-4.3s', tilt: 5 },
+  { number: 13, title: 'LLM extraction', chaos: [12, 37], graph: [20, 33], drift: [14, 12], arc: [-11, -9], duration: '6.7s', phase: '-3.4s', tilt: 2 },
+  { number: 14, title: 'Validators', chaos: [38, 34], graph: [35, 33], drift: [-13, -15], arc: [9, 10], duration: '5.5s', phase: '-0.9s', tilt: -5 },
+  { number: 17, title: 'Tarjan', chaos: [63, 38], graph: [50, 33], drift: [16, -13], arc: [-10, 10], duration: '7.1s', phase: '-5.8s', tilt: 4 },
+  { number: 19, title: 'Work waves', chaos: [87, 35], graph: [67, 33], drift: [-15, 12], arc: [10, -8], duration: '6.4s', phase: '-2.2s', tilt: -3 },
+  { number: 20, title: 'Critical path', chaos: [12, 61], graph: [84, 33], drift: [13, -16], arc: [-9, 11], duration: '7.6s', phase: '-4.7s', tilt: 5 },
+  { number: 25, title: 'Graph view', chaos: [38, 57], graph: [25, 51], drift: [-14, 14], arc: [10, -9], duration: '5.9s', phase: '-3.1s', tilt: -4 },
+  { number: 30, title: 'MCP route', chaos: [62, 62], graph: [45, 51], drift: [15, -12], arc: [-11, 8], duration: '6.8s', phase: '-1.4s', tilt: 3 },
+  { number: 31, title: 'Agent tools', chaos: [88, 58], graph: [65, 51], drift: [-12, 15], arc: [8, -10], duration: '7.3s', phase: '-5.4s', tilt: -5 },
+  { number: 35, title: 'Simulate', chaos: [12, 83], graph: [83, 51], drift: [14, -13], arc: [-10, 9], duration: '5.7s', phase: '-2.8s', tilt: 4 },
+  { number: 37, title: 'Dispatch', chaos: [38, 79], graph: [45, 69], drift: [-15, -12], arc: [11, 8], duration: '7.7s', phase: '-4.1s', tilt: -3 },
+  { number: 41, title: 'Demo mode', chaos: [63, 85], graph: [65, 69], drift: [12, 16], arc: [-9, -11], duration: '6.1s', phase: '-0.5s', tilt: 2 },
+  { number: 49, title: 'Runs UI', chaos: [87, 81], graph: [55, 86], drift: [-16, -11], arc: [10, 8], duration: '7.2s', phase: '-3.7s', tilt: -4 },
+  { number: 51, title: 'Serialize', chaos: [62, 73], graph: [83, 69], drift: [13, 14], arc: [-10, -9], duration: '5.6s', phase: '-2s', tilt: 3 },
 ];
 
 const waves = [
-  { index: 0, y: 5, label: 'Wave 0', detail: 'start now · 4' },
-  { index: 1, y: 27, label: 'Wave 1', detail: 'after wave 0 · 4' },
-  { index: 2, y: 48, label: 'Wave 2', detail: 'after wave 1 · 5' },
-  { index: 3, y: 69, label: 'Wave 3', detail: 'after wave 2 · 4' },
+  { index: 0, y: 15, label: 'Wave 0', detail: 'ready now · 4 issues' },
+  { index: 1, y: 33, label: 'Wave 1', detail: 'after wave 0 · 5 issues' },
+  { index: 2, y: 51, label: 'Wave 2', detail: 'after wave 1 · 4 issues' },
+  { index: 3, y: 69, label: 'Wave 3', detail: 'after wave 2 · 3 issues' },
+  { index: 4, y: 86, label: 'Wave 4', detail: 'after wave 3 · 1 issue' },
 ];
 
 function Arrow({ direction }: { direction: 'left' | 'right' }) {
@@ -178,14 +178,6 @@ export function PitchDeck() {
 
   return (
     <main className={styles.deck} aria-label="Lattice pitch deck">
-      <header className={styles.topbar}>
-        <div className={styles.wordmark}>
-          <Mark />
-          <span>LATTICE</span>
-          <span className={styles.deckLabel}>PITCH / 03 MIN</span>
-        </div>
-      </header>
-
       <section className={`${styles.slide} ${slide === 0 ? styles.active : ''}`} aria-hidden={slide !== 0}>
         <div
           className={`${styles.issueField} ${revealed ? styles.revealed : ''}`}
@@ -198,10 +190,10 @@ export function PitchDeck() {
                 <path d="M0 0 3 1.5 0 3Z" />
               </marker>
             </defs>
-            <path d="M14 20 14 37M14 20 38 37M38 20 38 37M62 20 62 37M62 20 86 37M86 20 86 37" />
-            <path d="M14 41 10 58M14 41 30 58M38 41 30 58M38 41 50 58M62 41 50 58M62 41 70 58M86 41 70 58M86 41 90 58" />
-            <path d="M10 62 14 79M30 62 14 79M30 62 38 79M50 62 38 79M50 62 62 79M70 62 62 79M70 62 86 79M90 62 86 79" />
-            <path className={styles.criticalEdge} d="M10 62 14 79M50 62 62 79" />
+              <path d="M23 18 C23 25 20 27 20 31 M23 18 C27 25 35 27 35 31 M42 18 C42 25 50 27 50 31 M61 18 C60 25 50 27 50 31 M61 18 C64 25 67 27 67 31 M81 18 C80 25 67 27 67 31 M81 18 C84 25 84 27 84 31" />
+              <path d="M20 36 C20 43 25 45 25 49 M35 36 C36 43 45 45 45 49 M50 36 C50 43 45 45 45 49 M50 36 C54 43 65 45 65 49 M67 36 C67 43 65 45 65 49 M67 36 C72 43 83 45 83 49 M84 36 C84 43 83 45 83 49" />
+              <path d="M25 54 C26 61 45 63 45 67 M45 54 C45 61 45 63 45 67 M65 54 C65 61 65 63 65 67 M83 54 C80 61 65 63 65 67 M65 54 C72 61 83 63 83 67" />
+              <path d="M45 72 C46 79 55 80 55 84 M65 72 C64 79 55 80 55 84 M83 72 C75 79 55 80 55 84" />
           </svg>
           <div className={styles.waveHeaders}>
             {waves.map((wave) => (
@@ -231,7 +223,7 @@ export function PitchDeck() {
             } as CSSProperties;
             return (
               <article
-                className={`${styles.issueCard} ${issue.tone === 'coral' ? styles.issueCoral : ''}`}
+                className={styles.issueCard}
                 style={cardStyle}
                 key={issue.number}
                 aria-label={`GitHub issue #${issue.number}: ${issue.title}`}
