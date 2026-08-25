@@ -58,8 +58,26 @@ async function post<T>(path: string, body: unknown): Promise<T> {
   return json as T;
 }
 
+export interface PlanIssue {
+  number: number; title: string; url: string; state: 'open' | 'closed';
+  effort_days: number; unblocks: number[]; why: string; on_critical_path: boolean;
+}
+export interface BuildPlan {
+  target: { number: number; title: string; url: string; state: string };
+  ready: boolean;
+  steps: Array<{ step: number; parallel: number; issues: PlanIssue[] }>;
+  total_prerequisites: number;
+  remaining_prerequisites: number;
+  already_done: number[];
+  remaining_effort_days: number;
+  critical_path_days: number;
+  notes?: string;
+}
+
 export const api = {
   repos: () => get<RepoRow[]>('/repos'),
+  plan: (n: number, repo?: string) =>
+    get<BuildPlan>(`/plan/${n}${repo ? `?repo=${encodeURIComponent(repo)}` : ''}`),
   startRun: (repo: string) =>
     post<{ runId: string; repo: string; status: string; existing?: boolean }>('/runs', { repo }),
   graph: (repo?: string) =>

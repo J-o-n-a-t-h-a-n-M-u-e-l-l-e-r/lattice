@@ -3,6 +3,7 @@ import { rankReady, reasonFor } from '../graph/schedule.js';
 import { buildGraphPayload, buildIssueContext } from '../api/graph.js';
 import * as store from '../store/index.js';
 import { computeSchedule } from '../graph/schedule.js';
+import { buildPlan } from '../graph/plan.js';
 
 /**
  * The agent-facing surface. Not a GitHub wrapper - the official GitHub MCP
@@ -182,6 +183,20 @@ export async function reportDependency(
     accepted: true, blocking: true,
     graph_delta: { newly_blocked: [blocked] },
   };
+}
+
+/**
+ * Bottom-up: everything that must exist before a chosen issue, in build order.
+ *
+ * This is the counterpart to list_ready_work. That one answers "what can I
+ * start", which is the dispatcher's question. This answers "I want this thing -
+ * what do I have to build first", which is what someone who already knows their
+ * goal actually needs.
+ */
+export async function planForIssue(repo: string, number: number) {
+  const [issues, edges] = await Promise.all([store.getIssues(repo), store.getEdges(repo)]);
+  if (issues.length === 0) return { error: 'not_analysed' };
+  return buildPlan(issues, edges, number);
 }
 
 /** "If we finish these two today, what opens up tomorrow?" */

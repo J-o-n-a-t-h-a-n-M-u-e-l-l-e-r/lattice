@@ -69,6 +69,16 @@ export function buildMcpServer(): McpServer {
   );
 
   server.tool(
+    'plan_for_issue',
+    'Everything that must be built before a chosen issue, in dependency order. '
+    + 'Start here when you know which issue you want to ship: step 1 needs nothing, '
+    + 'each later step only needs what earlier steps produced, and issues within a '
+    + 'step are independent of each other.',
+    { number: z.number().int().describe('the issue you want to finish'), repo: repoArg },
+    async ({ number, repo }) => json(await tools.planForIssue(repo ?? defaultRepo(), number)),
+  );
+
+  server.tool(
     'simulate_completion',
     'What becomes ready if these issues were finished? Does not mutate anything.',
     { numbers: z.array(z.number().int()), repo: repoArg },

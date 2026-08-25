@@ -3,6 +3,7 @@ import { cors } from 'hono/cors';
 import { runPipeline } from '../infer/run.js';
 import * as store from '../store/index.js';
 import { buildGraphPayload, buildIssueContext } from './graph.js';
+import { planForIssue } from '../mcp/tools.js';
 import { defaultRepo } from '../config.js';
 
 export function apiRoutes() {
@@ -47,6 +48,12 @@ export function apiRoutes() {
     const ctx = await buildIssueContext(repoOf(c), Number(c.req.param('number')));
     if (!ctx) return c.json({ error: 'not_found' }, 404);
     return c.json(ctx);
+  });
+
+  app.get('/plan/:number', async (c) => {
+    const plan = await planForIssue(repoOf(c), Number(c.req.param('number')));
+    if ('error' in plan) return c.json(plan, plan.error === 'not_analysed' ? 404 : 400);
+    return c.json(plan);
   });
 
   app.get('/edges/:blocked/:blockedBy', async (c) => {

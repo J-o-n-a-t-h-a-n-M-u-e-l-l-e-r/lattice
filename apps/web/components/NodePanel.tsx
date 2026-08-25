@@ -3,6 +3,7 @@ import { useEffect, useState } from 'react';
 import { ArrowUpRight, ChevronDown, X } from 'lucide-react';
 import type { IssueContext } from '@lattice/types';
 import { api } from '../lib/api';
+import { BuildPlan } from './BuildPlan';
 import { IssueState } from './Octicon';
 import { Badge } from './ui/badge';
 import { Button } from './ui/button';
@@ -112,6 +113,11 @@ export function NodePanel({ number, repo, onClose }: {
               View on GitHub <ArrowUpRight className="h-3.5 w-3.5" />
             </a>
           </Button>
+
+          <section>
+            <h3 className="mb-2 text-[12px] font-semibold">To ship this</h3>
+            <BuildPlan number={number} repo={repo} />
+          </section>
 
           <section>
             <h3 className="mb-2 text-[12px] font-semibold">
