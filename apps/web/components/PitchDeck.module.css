@@ -338,8 +338,8 @@
 .projectTitleLockup {
   align-items: center;
   display: flex;
-  flex-direction: column;
-  gap: clamp(0.8rem, 1.8vw, 1.5rem);
+  flex-direction: row;
+  gap: clamp(0.7rem, 1.5vw, 1.25rem);
   position: relative;
   z-index: 1;
 }
