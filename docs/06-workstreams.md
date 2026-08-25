@@ -56,7 +56,7 @@ Five people plus several agents in one repo. These are not suggestions:
 - **Stay in your lane's directories.** Every issue body lists a **Scope** — the files it may touch. If you need to change a file outside it, say so in the issue rather than doing it quietly.
 - **`types.ts` changes are announced.** Anyone may propose one; nobody lands one without saying so, because it invalidates four other people's assumptions.
 - **`src/graph/**` takes no dependencies on anything else.** If you find yourself importing Octokit there, the design has drifted.
-- **Nothing outside `src/lib/github/` imports Octokit. Nothing outside `src/lib/infer/llm.ts` imports the Anthropic SDK.** These two rules keep the seams clean and make the fallback modes possible.
+- **Nothing outside `src/lib/github/` imports Octokit. Nothing outside `src/lib/infer/llm.ts` imports the OpenRouter client.** These two rules keep the seams clean and make the fallback modes possible.
 
 ## Stop-loss
 

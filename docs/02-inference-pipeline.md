@@ -56,6 +56,15 @@ The trick worth naming: **cheap signals do double duty as candidate generation.*
 
 ## L2 · Candidate generation & clustering — the O(n²) answer
 
+> **Since we moved to Ox Alpha (1M context), clustering is optional at our scale.** It solved two problems; the big context window only solves one of them.
+>
+> | Problem | Still real? |
+> |---|---|
+> | **Capacity** — the backlog doesn't fit | ❌ Gone. 45 issues ≈ 30k tokens against 1M. |
+> | **Precision** — a model asked about 45 issues attends worse than one asked about 12 | ✅ **Still real.** |
+>
+> Make cluster size configurable (`--cluster-size 0` = single call) and **default to one call for `n ≤ 40`**. Run both against the gold set and report which wins — that comparison is a genuinely interesting result for one extra run. See [`10-model-provider.md`](10-model-provider.md#2--1m-context--clustering-is-now-optional-at-our-scale).
+
 Never ask the model about all pairs. Never ask it about a *single* pair either — N² LLM calls is the same problem wearing a hat. **Ask about clusters.**
 
 ```
@@ -83,15 +92,17 @@ Two refinements that matter:
 | n = 30 | ~5 | seconds |
 | n = 200 | ~32 | ~50s |
 
-Measured scale claims are rare in hackathon submissions and judges notice. For n > 300, the Batch API halves cost — mention as future work, don't build it.
+Measured scale claims are rare in hackathon submissions and judges notice.
+
+⚠️ These are **request** counts, and OpenRouter's free tier allows 20/min and 50/day (1000/day with $10 of credits). At n=200 a single clustered run is ~16% of an un-topped-up daily quota. Cache responses to disk keyed by prompt hash — see [`10-model-provider.md`](10-model-provider.md#rate-limits--plan-for-these-they-will-bite).
 
 ---
 
 ## L3 · LLM edge extraction
 
-**Model: `claude-opus-5`** with adaptive thinking and `effort: "medium"`. Adaptive thinking is what makes it reason about *directionality* instead of pattern-matching. If latency hurts the demo, drop to `effort: "low"` — **do not downgrade the model.**
+**Model: `stealth/ox-alpha` via OpenRouter.** Free, 1M context, OpenAI-compatible. Full setup, limits and caveats in [`10-model-provider.md`](10-model-provider.md).
 
-Structured output via JSON schema. ⚠️ Verify the exact SDK binding against the `claude-api` skill before writing this — the API changed and `output_format` is deprecated in favour of `output_config: { format: {...} }`.
+⚠️ **This model does not enforce JSON schemas.** Use forced tool-calling (`tool_choice` pinned to one `emit_edges` function) and then **Zod-validate every response**, retrying once with the validation error fed back. Never `parse`, always `safeParse`. Details in [`10-model-provider.md`](10-model-provider.md#1--no-schema-enforcement--force-a-tool-then-validate).
 
 ### The system prompt
 
@@ -221,7 +232,9 @@ is a credibility signal no other team will have.
 
 ### Optional L3.5 · Adjudication pass
 
-Only if time allows. For edges in the 0.45–0.75 confidence band, make one call per edge with both issues in full, asking for a yes/no with reasoning. Raises precision meaningfully at roughly $0.05/edge. This is where `claude-opus-5` at `effort: "high"` earns its cost.
+Only if time allows. For edges in the 0.45–0.75 confidence band, make one call per edge with both issues in full, asking for a yes/no with reasoning. Raises precision meaningfully.
+
+The model is free, so the cost objection is gone — but the **request quota** is not. One call per borderline edge can be 15+ requests against a daily limit of 50 (or 1000 with credits). Budget it, and cache aggressively.
 
 ---
 
@@ -256,7 +269,7 @@ GitHub's dependency API stores no reasoning. When an edge is applied, post this 
 ```markdown
 🔗 **Dependency recorded:** blocked by #12
 
-> data_contract · confidence 0.91 · inferred by Lattice (claude-opus-5), approved by @handle
+> data_contract · confidence 0.91 · inferred by Lattice (stealth/ox-alpha), approved by @handle
 
 **Why:** #23 queries the edges table that #12 defines.
 **Evidence:** "returns EdgeCandidate[] from analysis.json" — from #23

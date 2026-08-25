@@ -2,7 +2,7 @@
 <!-- labels: lane:demo,size:M -->
 **What**
 
-An environment flag that runs the entire app from committed fixtures: no `GITHUB_TOKEN`, no `ANTHROPIC_API_KEY`, no Copilot seat. Graph view, review queue, cycle resolution, MCP responses — all backed by committed JSON. Write actions become no-ops that show what they *would* send.
+An environment flag that runs the entire app from committed fixtures: no `GITHUB_TOKEN`, no `OPENROUTER_API_KEY`, no Copilot seat. Graph view, review queue, cycle resolution, MCP responses — all backed by committed JSON. Write actions become no-ops that show what they *would* send.
 
 **Why it matters**
 

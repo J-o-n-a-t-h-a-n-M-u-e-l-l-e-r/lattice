@@ -67,6 +67,7 @@ Coordination between human and non-human teammates **is scheduling**. Lattice ma
 | [`docs/07-demo-script.md`](docs/07-demo-script.md) | The two-minute demo, beat by beat |
 | [`docs/08-risks.md`](docs/08-risks.md) | Honest weaknesses, fallbacks, stop-loss rules |
 | [`docs/09-github-api-notes.md`](docs/09-github-api-notes.md) | Verified endpoints, headers, and the gotchas that will bite |
+| [`docs/10-model-provider.md`](docs/10-model-provider.md) | OpenRouter + Ox Alpha: setup, schema caveat, rate limits, privacy |
 | [`AGENTS.md`](AGENTS.md) | How agents should work in this repo |
 
 ## Quickstart

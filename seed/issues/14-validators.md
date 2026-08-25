@@ -12,6 +12,8 @@
 
 Every rejection is recorded with its reason, not silently dropped.
 
+These guards sit *after* the Zod schema validation in #13. Zod catches malformed shape; these catch well-formed nonsense. Both are needed — Ox Alpha does not enforce schemas, and no schema would ever have caught a fabricated evidence quote.
+
 **Why it matters**
 
 This file is what makes LLM output trustworthy enough to write into GitHub. Without guard 2 in particular, the human review gate becomes theatre — a reviewer skimming plausible rationales with no way to check them.

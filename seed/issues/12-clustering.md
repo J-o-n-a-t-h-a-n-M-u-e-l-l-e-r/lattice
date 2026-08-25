@@ -8,11 +8,17 @@ Then build the undirected candidate graph weighted by how many signals fired, pa
 
 Two refinements that matter: each issue joins its **top 2** clusters, so cluster boundaries get double coverage; and a final **representatives cluster** takes the 2 highest-degree issues from each cluster (capped at 14) to catch genuine cross-cluster edges.
 
+**⚠️ Scope change since this was written:** we now use `stealth/ox-alpha` with a **1M-token context**, so clustering is no longer needed for *capacity* at our scale — 45 issues is roughly 30k tokens. It is still needed for *precision*, because a model asked about 45 issues at once attends worse than one asked about 12.
+
+So: make cluster size configurable via `LATTICE_CLUSTER_SIZE`, where `0` means one call for the whole backlog, and **default to a single call for n ≤ 40**. Then measure both paths against the gold set in #42 and report which wins. That comparison costs one extra run and is a genuinely interesting result.
+
 **Why it matters**
 
-This is the answer to the O(n²) problem, and the reason the project scales past a toy. Never ask the model about all pairs; never ask about a single pair either, since N² calls is the same problem wearing a hat. Ask about clusters.
+This is the answer to the O(n²) problem for large backlogs, and the reason the project scales past a toy. Never ask the model about all pairs; never ask about a single pair either, since N² calls is the same problem wearing a hat. Ask about clusters.
 
-Target cost: n=30 → ~5 LLM calls. n=200 → ~32 calls at concurrency 5, roughly 50 seconds. Put these measured numbers in the README — scale claims backed by numbers are rare in hackathon submissions.
+Target: n=30 → ~5 requests. n=200 → ~32 requests at concurrency 5, roughly 50 seconds. Put these measured numbers in the README — scale claims backed by numbers are rare in hackathon submissions.
+
+Note that **requests, not dollars, are the scarce resource**: the model is free, but OpenRouter's free tier allows 20/min and 50/day (1000/day with $10 of credits).
 
 **Scope**
 

@@ -26,7 +26,7 @@ Lattice infers dependency edges between GitHub issues, gets a human to approve t
 - **TypeScript, strict mode.** No `any` in `src/lib/**` without a comment explaining why.
 - **Pure functions in `src/graph/**`.** No I/O, no network, no `process.env`. These are the parts we unit-test and the parts we explain on stage.
 - **All GitHub network access goes through `src/lib/github/`.** Nothing else imports Octokit.
-- **All LLM access goes through `src/lib/infer/llm.ts`.** Nothing else imports the Anthropic SDK.
+- **All LLM access goes through `src/lib/infer/llm.ts`.** Nothing else imports the OpenRouter client. Model ID and base URL come from env, never hardcoded at a call site — see [`docs/10-model-provider.md`](docs/10-model-provider.md).
 - Every module that reads config takes it as an argument. Read `process.env` at the entrypoints only (`scripts/*.ts`, route handlers).
 - Prefer a small named function over a clever one-liner. Several of these algorithms get explained to judges out loud.
 

@@ -4,7 +4,7 @@ Put a **"What this doesn't do yet"** section in the README. The judges said unfi
 
 ---
 
-## The ten
+## The eleven
 
 1. **LLM-inferred edges are opinions, not facts.**
    *Mitigation:* typed edges, verbatim-evidence requirement, confidence bands, mandatory human gate, committed rejection log. Say it in the README's first paragraph rather than burying it.
@@ -33,8 +33,11 @@ Put a **"What this doesn't do yet"** section in the README. The judges said unfi
 9. **"GitHub will just build this."**
    *Mitigation:* don't lead with the visualization. Lead with *the scheduler for agents*. The viz is a consequence, not the product.
 
-10. **A judge can't run it.**
-    *Mitigation:* `DEMO_MODE=1` with a committed fixture snapshot — no GitHub token, no Copilot seat, no Anthropic key, and they still see the whole app. **This is the single highest-ROI hour in the plan** and it maps directly onto the "Craft" criterion.
+10. **We depend on an anonymous stealth model.** Ox Alpha is a preview and can vanish without notice; its provider is unnamed and retains prompts (though not for training).
+    *Mitigation:* the entire model layer sits behind one file and one env var, so switching providers is minutes. Say the privacy position out loud in the README — our backlog is public, so it costs us nothing, but anyone pointing Lattice at a private backlog is sending issue text to a third party. Naming that is evidence of judgement, not a weakness.
+
+11. **A judge can't run it.**
+    *Mitigation:* `DEMO_MODE=1` with a committed fixture snapshot — no GitHub token, no Copilot seat, no OpenRouter key, and they still see the whole app. **This is the single highest-ROI hour in the plan** and it maps directly onto the "Craft" criterion.
 
 ---
 
@@ -43,7 +46,9 @@ Put a **"What this doesn't do yet"** section in the README. The judges said unfi
 | If this fails | Fall back to | Cost |
 |---|---|---|
 | LLM layer slow / expensive / noisy | `--no-llm`. The seeded corpus has enough explicit refs to render a real graph. | 0 — built in the first block |
-| Structured-output SDK binding fights you | A strict tool-use tool (`strict: true`, `additionalProperties: false`) — same schema, different transport | 20 min |
+| Model returns malformed / off-schema JSON | Expected — Ox Alpha does not enforce schemas. Zod `safeParse` + one retry with the error fed back; drop the cluster on a second failure | 0 — designed in |
+| **Ox Alpha withdrawn** (stealth preview, no stability guarantee) | Swap `LATTICE_MODEL` to any OpenAI-compatible OpenRouter model. The forced-tool + Zod path works on both | minutes |
+| **OpenRouter 429 / daily quota exhausted** | `--no-llm` or `DEMO_MODE=1`; disk cache means re-runs cost nothing | 0 — if the cache exists |
 | React Flow layout ugly | Render `mermaid.ts` output client-side with the `mermaid` package | 0 — built in the first block |
 | `blocked_by` POST forbidden (perms / preview) | (a) `--dry-run` prints exact calls; (b) post the Mermaid DAG plus a blocked-by task list into a tracking issue; (c) shell out to `gh` **only after upgrading to ≥ 2.94** | 30 min |
 | Copilot dispatch fails at demo time | Dry-run payload view + `scripts/agent.ts` local MCP agent | 0 — built earlier |

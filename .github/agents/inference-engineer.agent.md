@@ -13,7 +13,7 @@ Read `docs/02-inference-pipeline.md` first — it contains the layer design, the
 
 ## Hard constraints
 
-- **Only `llm.ts` imports the Anthropic SDK.** Nothing else.
+- **Only `llm.ts` imports the OpenRouter client.** Nothing else. Model ID and base URL come from env, never hardcoded.
 - **Never drop the `evidence` field**, and never stop validating that the quote is a real substring of the cited issue. That validation is what makes the human review gate real rather than decorative.
 - **Deterministic layers run first and always.** The graph must still work with `--no-llm`. This is our primary fallback — don't let it rot.
 - **`ordering_preference` edges never get `writeBack: true`.** They are scheduler tie-breaks, not dependencies.
@@ -21,7 +21,13 @@ Read `docs/02-inference-pipeline.md` first — it contains the layer design, the
 
 ## Model
 
-`claude-opus-5` with adaptive thinking, `effort: "medium"`. If latency hurts, drop to `effort: "low"` — do not downgrade the model. Verify the structured-output SDK binding against current docs; the API changed and older `output_format` examples are stale.
+`stealth/ox-alpha` via OpenRouter — free, 1M context, OpenAI-compatible. Read `docs/10-model-provider.md` before writing a line of `llm.ts`.
+
+**It does not enforce JSON schemas.** Force a single `emit_edges` tool with `tool_choice`, then Zod `safeParse` every response and retry once with the validation error fed back. Drop the cluster on a second failure rather than failing the run.
+
+Because the context is 1M, clustering is no longer needed for capacity at our scale — only for precision. Default to a single call for `n <= 40`, keep `--cluster-size` configurable, and measure both against the gold set.
+
+Watch the quota: 20 requests/min, 50/day free (1000/day with $10 credits). Cache responses to disk keyed by a hash of (model, system prompt, cluster content) — during prompt iteration you will otherwise burn the day's quota re-deriving identical answers.
 
 ## Report honestly
 
