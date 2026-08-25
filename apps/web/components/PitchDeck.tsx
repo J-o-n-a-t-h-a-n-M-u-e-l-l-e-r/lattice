@@ -185,7 +185,7 @@ export function PitchDeck() {
           className={`${styles.issueField} ${graphOrganized ? styles.organized : ''} ${titleStage ? styles.titleStage : ''}`}
           role="group"
           aria-label={titleStage
-            ? 'Microsoft 365 Collaboration Rollout'
+            ? 'Lattice'
             : graphOrganized
               ? 'GitHub issues arranged into work waves'
               : 'GitHub issues awaiting a work schedule'}
@@ -245,7 +245,7 @@ export function PitchDeck() {
             })}
           </div>
           <div className={styles.projectTitleReveal} aria-hidden={!titleStage}>
-            <h1>Microsoft 365<br />Collaboration Rollout</h1>
+            <h1>Lattice</h1>
           </div>
         </div>
       </section>

@@ -14,7 +14,7 @@ const slides = [
     title: 'The hidden graph',
     note: 'Ask which work can safely start right now. Let the floating issues establish the problem, then reveal the schedule.',
     titleStage: {
-      title: 'Microsoft 365 Collaboration Rollout',
+      title: 'Lattice',
       note: 'Let the settled graph resolve into the project title, then advance to the shared schedule.',
     },
   },
@@ -81,7 +81,7 @@ function Preview({ index, introStage = 0 }: { index: number; introStage?: number
             </span>
           ))}
         </div>
-        <div className={styles.previewProjectTitle}>Microsoft 365<br />Collaboration Rollout</div>
+        <div className={styles.previewProjectTitle}>Lattice</div>
       </div>
     );
   }
