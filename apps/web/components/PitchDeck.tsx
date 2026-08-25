@@ -69,15 +69,20 @@ function IssueOpenedIcon() {
 
 export function PitchDeck() {
   const [slide, setSlide] = useState(0);
+  const [playbookStage, setPlaybookStage] = useState(0);
   const [graphStage, setGraphStage] = useState(0);
   const [blackout, setBlackout] = useState(false);
   const presenterChannel = useRef<BroadcastChannel | null>(null);
-  const deckState = useRef({ slide, graphStage, blackout });
-  deckState.current = { slide, graphStage, blackout };
+  const deckState = useRef({ slide, playbookStage, graphStage, blackout });
+  deckState.current = { slide, playbookStage, graphStage, blackout };
   const graphOrganized = graphStage > 0;
   const titleStage = graphStage === 2;
 
   const next = () => {
+    if (slide === 0 && playbookStage < 1) {
+      setPlaybookStage((stage) => stage + 1);
+      return;
+    }
     if (slide === 1 && graphStage < 2) {
       setGraphStage((stage) => stage + 1);
       return;
@@ -86,6 +91,10 @@ export function PitchDeck() {
   };
 
   const previous = () => {
+    if (slide === 0 && playbookStage > 0) {
+      setPlaybookStage((stage) => stage - 1);
+      return;
+    }
     if (slide === 1 && graphStage > 0) {
       setGraphStage((stage) => stage - 1);
       return;
@@ -115,6 +124,7 @@ export function PitchDeck() {
       if (data.type === 'go-to') {
         const destination = Math.max(0, Math.min(LAST_SLIDE, Number(data.slide)));
         setSlide(destination);
+        setPlaybookStage(destination === 0 ? Math.max(0, Math.min(1, Number(data.playbookStage) || 0)) : 0);
         setGraphStage(destination === 1 ? Math.max(0, Math.min(2, Number(data.graphStage) || 0)) : 0);
       }
       if (data.type === 'blackout') setBlackout(Boolean(data.enabled));
@@ -131,10 +141,11 @@ export function PitchDeck() {
       source: 'lattice-pitch-deck',
       type: 'state',
       slide,
+      playbookStage,
       graphStage,
       blackout,
     });
-  }, [slide, graphStage, blackout]);
+  }, [slide, playbookStage, graphStage, blackout]);
 
   useEffect(() => {
     const onKeyDown = (event: KeyboardEvent) => {
@@ -168,7 +179,7 @@ export function PitchDeck() {
 
     window.addEventListener('keydown', onKeyDown);
     return () => window.removeEventListener('keydown', onKeyDown);
-  }, [slide, graphStage]);
+  }, [slide, playbookStage, graphStage]);
 
   return (
     <main className={styles.deck} aria-label="Lattice pitch deck">
@@ -183,7 +194,7 @@ export function PitchDeck() {
           <li><b>3</b><p><strong>Write the house rules (AGENTS.md):</strong> stack, conventions, build, and tests.</p></li>
           <li><b>4</b><p><strong>One issue per agent.</strong> Clear acceptance criteria, constraints, own branch.</p></li>
           <li><b>5</b><p><strong>Require a small PR</strong> with green tests before anything reaches main.</p></li>
-          <li><b>6</b><p><strong>Start with one or two agents;</strong> <span className={styles.playbookHighlight}>parallelize only independent work.</span></p></li>
+          <li><b>6</b><p><strong>Start with one or two agents;</strong> <span className={`${styles.playbookHighlight} ${playbookStage > 0 ? styles.playbookHighlightActive : ''}`}>parallelize only independent work.</span></p></li>
           <li><b>7</b><p><strong>Freeze at 16:00:</strong> rehearse the 3-minute pitch, record a backup, submit by 17:00.</p></li>
         </ol>
 
