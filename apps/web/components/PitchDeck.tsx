@@ -9,27 +9,31 @@ type IssueCard = {
   chaos: [number, number];
   graph: [number, number];
   drift: [number, number];
+  arc: [number, number];
+  duration: string;
+  phase: string;
+  tilt: number;
   tone?: 'blue' | 'coral';
 };
 
 const issues: IssueCard[] = [
-  { number: 1, title: 'Types contract', chaos: [12, 15], graph: [14, 18], drift: [2, -1] },
-  { number: 3, title: 'Graph store', chaos: [37, 12], graph: [38, 18], drift: [-2, 1] },
-  { number: 5, title: 'Ingest issues', chaos: [62, 16], graph: [62, 18], drift: [1, 2] },
-  { number: 6, title: 'Read deps', chaos: [87, 13], graph: [86, 18], drift: [-1, -2] },
-  { number: 13, title: 'LLM extraction', chaos: [12, 37], graph: [14, 39], drift: [1, -2] },
-  { number: 14, title: 'Validators', chaos: [38, 34], graph: [38, 39], drift: [-2, 1] },
-  { number: 17, title: 'Tarjan', chaos: [63, 38], graph: [10, 60], drift: [2, 1], tone: 'coral' },
-  { number: 19, title: 'Work waves', chaos: [87, 35], graph: [30, 60], drift: [-1, 2] },
-  { number: 20, title: 'Critical path', chaos: [12, 61], graph: [14, 81], drift: [1, -1], tone: 'coral' },
-  { number: 25, title: 'Graph view', chaos: [38, 57], graph: [62, 39], drift: [-2, 2] },
-  { number: 30, title: 'MCP route', chaos: [62, 62], graph: [86, 39], drift: [2, -1] },
-  { number: 31, title: 'Agent tools', chaos: [88, 58], graph: [90, 60], drift: [-1, 1] },
-  { number: 35, title: 'Simulate', chaos: [12, 83], graph: [50, 60], drift: [1, 2] },
-  { number: 37, title: 'Dispatch', chaos: [38, 79], graph: [70, 60], drift: [-2, -1] },
-  { number: 41, title: 'Demo mode', chaos: [63, 85], graph: [38, 81], drift: [2, 1] },
-  { number: 49, title: 'Runs UI', chaos: [87, 81], graph: [62, 81], drift: [-1, -2] },
-  { number: 51, title: 'Serialize', chaos: [62, 73], graph: [86, 81], drift: [1, 1] },
+  { number: 1, title: 'Types contract', chaos: [12, 15], graph: [14, 18], drift: [15, -12], arc: [-10, 8], duration: '6.2s', phase: '-2.6s', tilt: -2 },
+  { number: 3, title: 'Graph store', chaos: [37, 12], graph: [38, 18], drift: [-14, 13], arc: [11, -8], duration: '7.4s', phase: '-5.1s', tilt: 3 },
+  { number: 5, title: 'Ingest issues', chaos: [62, 16], graph: [62, 18], drift: [13, 15], arc: [-9, -10], duration: '5.8s', phase: '-1.7s', tilt: -4 },
+  { number: 6, title: 'Read deps', chaos: [87, 13], graph: [86, 18], drift: [-16, -11], arc: [10, 9], duration: '7.8s', phase: '-4.3s', tilt: 5 },
+  { number: 13, title: 'LLM extraction', chaos: [12, 37], graph: [14, 39], drift: [14, 12], arc: [-11, -9], duration: '6.7s', phase: '-3.4s', tilt: 2 },
+  { number: 14, title: 'Validators', chaos: [38, 34], graph: [38, 39], drift: [-13, -15], arc: [9, 10], duration: '5.5s', phase: '-0.9s', tilt: -5 },
+  { number: 17, title: 'Tarjan', chaos: [63, 38], graph: [10, 60], drift: [16, -13], arc: [-10, 10], duration: '7.1s', phase: '-5.8s', tilt: 4, tone: 'coral' },
+  { number: 19, title: 'Work waves', chaos: [87, 35], graph: [30, 60], drift: [-15, 12], arc: [10, -8], duration: '6.4s', phase: '-2.2s', tilt: -3 },
+  { number: 20, title: 'Critical path', chaos: [12, 61], graph: [14, 81], drift: [13, -16], arc: [-9, 11], duration: '7.6s', phase: '-4.7s', tilt: 5, tone: 'coral' },
+  { number: 25, title: 'Graph view', chaos: [38, 57], graph: [62, 39], drift: [-14, 14], arc: [10, -9], duration: '5.9s', phase: '-3.1s', tilt: -4 },
+  { number: 30, title: 'MCP route', chaos: [62, 62], graph: [86, 39], drift: [15, -12], arc: [-11, 8], duration: '6.8s', phase: '-1.4s', tilt: 3 },
+  { number: 31, title: 'Agent tools', chaos: [88, 58], graph: [90, 60], drift: [-12, 15], arc: [8, -10], duration: '7.3s', phase: '-5.4s', tilt: -5 },
+  { number: 35, title: 'Simulate', chaos: [12, 83], graph: [50, 60], drift: [14, -13], arc: [-10, 9], duration: '5.7s', phase: '-2.8s', tilt: 4 },
+  { number: 37, title: 'Dispatch', chaos: [38, 79], graph: [70, 60], drift: [-15, -12], arc: [11, 8], duration: '7.7s', phase: '-4.1s', tilt: -3 },
+  { number: 41, title: 'Demo mode', chaos: [63, 85], graph: [38, 81], drift: [12, 16], arc: [-9, -11], duration: '6.1s', phase: '-0.5s', tilt: 2 },
+  { number: 49, title: 'Runs UI', chaos: [87, 81], graph: [62, 81], drift: [-16, -11], arc: [10, 8], duration: '7.2s', phase: '-3.7s', tilt: -4 },
+  { number: 51, title: 'Serialize', chaos: [62, 73], graph: [86, 81], drift: [13, 14], arc: [-10, -9], duration: '5.6s', phase: '-2s', tilt: 3 },
 ];
 
 const waves = [
@@ -56,6 +60,15 @@ function Mark() {
     <svg className={styles.mark} viewBox="0 0 20 20" aria-hidden="true">
       <path d="M10 1.7 17.3 5.9v8.2L10 18.3l-7.3-4.2V5.9L10 1.7Z" />
       <path d="M10 1.7v16.6M2.7 5.9l14.6 8.2M17.3 5.9 2.7 14.1" />
+    </svg>
+  );
+}
+
+function IssueOpenedIcon() {
+  return (
+    <svg viewBox="0 0 20 20" aria-hidden="true">
+      <circle cx="10" cy="10" r="7.2" />
+      <circle cx="10" cy="10" r="1.65" className={styles.issueIconDot} />
     </svg>
   );
 }
@@ -174,7 +187,11 @@ export function PitchDeck() {
       </header>
 
       <section className={`${styles.slide} ${slide === 0 ? styles.active : ''}`} aria-hidden={slide !== 0}>
-        <div className={`${styles.issueField} ${revealed ? styles.revealed : ''}`} aria-hidden="true">
+        <div
+          className={`${styles.issueField} ${revealed ? styles.revealed : ''}`}
+          role="group"
+          aria-label={revealed ? 'GitHub issues arranged into work waves' : 'GitHub issues awaiting a work schedule'}
+        >
           <svg className={styles.edges} viewBox="0 0 100 100" preserveAspectRatio="none">
             <defs>
               <marker id="graph-arrow" markerWidth="3" markerHeight="3" refX="2.4" refY="1.5" orient="auto">
@@ -206,16 +223,25 @@ export function PitchDeck() {
               '--graph-y': `${issue.graph[1]}%`,
               '--drift-x': `${issue.drift[0]}px`,
               '--drift-y': `${issue.drift[1]}px`,
+              '--arc-x': `${issue.arc[0]}px`,
+              '--arc-y': `${issue.arc[1]}px`,
+              '--float-duration': issue.duration,
+              '--float-phase': issue.phase,
+              '--tilt': `${issue.tilt}deg`,
             } as CSSProperties;
             return (
-              <div
+              <article
                 className={`${styles.issueCard} ${issue.tone === 'coral' ? styles.issueCoral : ''}`}
                 style={cardStyle}
                 key={issue.number}
+                aria-label={`GitHub issue #${issue.number}: ${issue.title}`}
               >
-                <span>#{String(issue.number).padStart(2, '0')}</span>
+                <span className={styles.issueMeta}>
+                  <IssueOpenedIcon />
+                  <span>#{String(issue.number).padStart(2, '0')}</span>
+                </span>
                 <b>{issue.title}</b>
-              </div>
+              </article>
             );
           })}
         </div>

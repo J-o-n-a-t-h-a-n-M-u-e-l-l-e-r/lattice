@@ -239,28 +239,44 @@
   font-style: normal;
 }
 
-.previewIssues i {
+.previewIssues > span {
+  align-items: center;
   background: rgba(12, 40, 57, 0.9);
-  border: 1px solid rgba(125, 234, 255, 0.38);
-  color: #7deaff;
+  border: 1px solid rgba(63, 185, 80, 0.55);
+  color: #3fb950;
+  display: inline-flex;
   font-family: "SFMono-Regular", Consolas, monospace;
   font-size: clamp(0.3rem, 0.55vw, 0.5rem);
-  font-style: normal;
+  gap: 0.2rem;
+  line-height: 1;
   padding: 0.25rem 0.35rem;
   position: absolute;
 }
 
-.previewIssues i:nth-child(2) { left: 7%; top: 14%; }
-.previewIssues i:nth-child(3) { left: 42%; top: 11%; }
-.previewIssues i:nth-child(4) { left: 73%; top: 17%; }
-.previewIssues i:nth-child(5) { left: 7%; top: 39%; }
-.previewIssues i:nth-child(6) { left: 42%; top: 36%; }
-.previewIssues i:nth-child(7) { left: 73%; top: 42%; }
-.previewIssues i:nth-child(8) { left: 20%; top: 69%; }
-.previewIssues i:nth-child(9) { left: 66%; top: 75%; }
-.previewIssues i:nth-child(10) { left: 86%; top: 70%; }
+.previewIssues > span svg {
+  fill: none;
+  height: 0.55rem;
+  stroke: currentColor;
+  stroke-width: 1.7;
+  width: 0.55rem;
+}
 
-.previewIssues svg {
+.previewIssues > span svg circle:last-child {
+  fill: currentColor;
+  stroke: none;
+}
+
+.previewIssues > span:nth-child(2) { left: 7%; top: 14%; }
+.previewIssues > span:nth-child(3) { left: 42%; top: 11%; }
+.previewIssues > span:nth-child(4) { left: 73%; top: 17%; }
+.previewIssues > span:nth-child(5) { left: 7%; top: 39%; }
+.previewIssues > span:nth-child(6) { left: 42%; top: 36%; }
+.previewIssues > span:nth-child(7) { left: 73%; top: 42%; }
+.previewIssues > span:nth-child(8) { left: 20%; top: 69%; }
+.previewIssues > span:nth-child(9) { left: 66%; top: 75%; }
+.previewIssues > span:nth-child(10) { left: 86%; top: 70%; }
+
+.previewIssues > svg {
   fill: none;
   inset: 0;
   opacity: 0;
@@ -270,19 +286,19 @@
   transition: opacity 200ms ease;
 }
 
-.previewRevealed svg {
+.previewRevealed > svg {
   opacity: 0.5;
 }
 
-.previewRevealed i:nth-child(2) { left: 14%; top: 18%; }
-.previewRevealed i:nth-child(3) { left: 38%; top: 18%; }
-.previewRevealed i:nth-child(4) { left: 62%; top: 18%; }
-.previewRevealed i:nth-child(5) { left: 86%; top: 18%; }
-.previewRevealed i:nth-child(6) { left: 14%; top: 39%; }
-.previewRevealed i:nth-child(7) { left: 62%; top: 39%; }
-.previewRevealed i:nth-child(8) { left: 14%; top: 60%; }
-.previewRevealed i:nth-child(9) { left: 62%; top: 60%; }
-.previewRevealed i:nth-child(10) { left: 62%; top: 81%; }
+.previewRevealed > span:nth-child(2) { left: 14%; top: 18%; }
+.previewRevealed > span:nth-child(3) { left: 38%; top: 18%; }
+.previewRevealed > span:nth-child(4) { left: 62%; top: 18%; }
+.previewRevealed > span:nth-child(5) { left: 86%; top: 18%; }
+.previewRevealed > span:nth-child(6) { left: 14%; top: 39%; }
+.previewRevealed > span:nth-child(7) { left: 62%; top: 39%; }
+.previewRevealed > span:nth-child(8) { left: 14%; top: 60%; }
+.previewRevealed > span:nth-child(9) { left: 62%; top: 60%; }
+.previewRevealed > span:nth-child(10) { left: 62%; top: 81%; }
 
 .previewSystem .previewSteps {
   bottom: 14%;

@@ -36,6 +36,15 @@ function EyeIcon() {
   return <svg viewBox="0 0 24 24" aria-hidden="true"><path d="M3 3l18 18M10.7 10.8a2 2 0 0 0 2.5 2.5M5.3 6.6C3.8 8.3 3 10.3 3 12c0 2.8 3.7 7 9 7 1 0 2-.2 2.9-.6M9.8 4.2c.7-.2 1.4-.2 2.2-.2 5.3 0 9 4.2 9 8 0 1.4-.6 3-1.7 4.4" /></svg>;
 }
 
+function IssueOpenedIcon() {
+  return (
+    <svg viewBox="0 0 20 20" aria-hidden="true">
+      <circle cx="10" cy="10" r="7.2" />
+      <circle cx="10" cy="10" r="1.65" />
+    </svg>
+  );
+}
+
 function Preview({ index, revealed = false }: { index: number; revealed?: boolean }) {
   if (index === 0) {
     return (
@@ -46,7 +55,12 @@ function Preview({ index, revealed = false }: { index: number; revealed?: boolea
             <path d="M14 41 10 58M14 41 30 58M38 41 30 58M38 41 50 58M62 41 50 58M62 41 70 58M86 41 70 58M86 41 90 58" />
             <path d="M10 62 14 79M30 62 14 79M30 62 38 79M50 62 38 79M50 62 62 79M70 62 62 79M70 62 86 79M90 62 86 79" />
           </svg>
-          {['#01', '#05', '#13', '#17', '#19', '#25', '#30', '#37', '#49'].map((issue) => <i key={issue}>{issue}</i>)}
+          {['#01', '#05', '#13', '#17', '#19', '#25', '#30', '#37', '#49'].map((issue) => (
+            <span key={issue} aria-label={`GitHub issue ${issue}`}>
+              <IssueOpenedIcon />
+              {issue}
+            </span>
+          ))}
         </div>
       </div>
     );
