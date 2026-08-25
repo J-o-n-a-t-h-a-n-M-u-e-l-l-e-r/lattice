@@ -141,7 +141,7 @@
 }
 
 .issueCard {
-  align-items: baseline;
+  align-items: flex-start;
   background: rgba(20, 24, 33, 0.9);
   border: 1px solid rgba(72, 81, 99, 0.76);
   box-sizing: border-box;
@@ -149,7 +149,6 @@
   display: flex;
   gap: 0.35rem;
   left: var(--chaos-x);
-  overflow: hidden;
   padding: 0.48rem 0.58rem;
   position: absolute;
   top: var(--chaos-y);
@@ -161,7 +160,7 @@
     border-color 550ms ease,
     box-shadow 550ms ease,
     transform 900ms cubic-bezier(.16, 1, .3, 1);
-  white-space: nowrap;
+  white-space: normal;
   width: min(9.8rem, 16vw);
   z-index: 1;
   animation: issue-float var(--float-duration) cubic-bezier(.45, .05, .55, .95) var(--float-phase) infinite;
@@ -208,12 +207,13 @@
 
 .issueCard b {
   color: var(--ink);
+  flex: 1;
+  line-height: 1.3;
   min-width: 0;
   font-size: 0.66rem;
   font-weight: 650;
   letter-spacing: 0.01em;
-  overflow: hidden;
-  text-overflow: ellipsis;
+  overflow-wrap: break-word;
 }
 
 .revealed .issueCard {
