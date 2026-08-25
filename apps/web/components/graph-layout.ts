@@ -3,17 +3,14 @@ import type { Edge, Node } from '@xyflow/react';
 
 export const NODE_W = 230;
 export const NODE_H = 76;
-const GAP_X = 26;
-const GAP_Y = 150;   // room for the wave divider between rows
-const MAX_COLS = 7;
+const GAP_X = 34;
+const LAYER_H = 190;
+const DUMMY_W = 26;          // a routed edge reserves this much room in a row
 
 /**
- * Transitive reduction, computed HERE for rendering only.
- *
- * If A->B, B->C and A->C, the direct edge adds an arrow that tells the reader
- * nothing. It is not deleted from the graph though: it keeps its own rationale
- * and evidence, and toggling this off brings it back intact. The reduction is
- * lossy, which is why it never reaches the store or the scheduler.
+ * Transitive reduction, computed HERE for rendering only. It is lossy - a
+ * redundant-looking A->C still carries its own rationale and evidence - so it
+ * never reaches the store or the scheduler.
  */
 export function reduce(nodes: GraphNode[], edges: LatticeEdge[]): LatticeEdge[] {
   const nums = nodes.map((n) => n.number);
@@ -45,171 +42,286 @@ export function reduce(nodes: GraphNode[], edges: LatticeEdge[]): LatticeEdge[] 
   });
 }
 
+/* ── the layered layout ──────────────────────────────────────────────────── */
+
+type Cell = { id: string; real: number | null; layer: number; x: number; width: number };
+type Seg = { from: string; to: string };
+
 export interface Laid {
   nodes: Node[];
   edges: Edge[];
-  /** y offset + node count per wave, for the row labels. */
   rows: Array<{ wave: number; y: number; count: number; height: number }>;
-  width: number;
+  labelX: number;
+  crossings: number;
 }
 
 /**
- * Top-down layered layout, done by hand rather than by dagre.
+ * Sugiyama layered layout, top-down: order within layers, then assign x.
  *
- * dagre computes its own ranks, so overriding x to force wave columns left
- * nodes sharing a y - which is what produced the overlapping cards. Here a
- * wave IS a row and positions are assigned directly, so overlap is structurally
- * impossible.
+ * The two things that were causing the mess:
  *
- * Within a row, order is chosen by the barycentre of each node's blockers in
- * the row above (the classic Sugiyama ordering sweep). Two passes is plenty and
- * it visibly cuts edge crossings.
+ * 1. An edge spanning wave 0 -> wave 2 was drawn straight through wave 1,
+ *    crossing everything in it, and took no part in ordering. Standard fix is
+ *    DUMMY NODES - the long edge gets a placeholder in every layer it passes
+ *    through, so it occupies a lane and the ordering step can route around it.
+ * 2. Wide layers were wrapped into a grid, which destroys the layered model
+ *    entirely: position within a row stopped meaning anything, so barycentre
+ *    ordering had nothing to work with. Layers are single rows now.
  */
 export function layout(
   nodes: GraphNode[],
   edges: LatticeEdge[],
   opts: { criticalPath: number[]; highlight: Set<number> | null; selected: number | null },
 ): Laid {
-  const byWave = new Map<number, GraphNode[]>();
+  const layerOf = new Map(nodes.map((n) => [n.number, n.wave]));
+  const maxLayer = nodes.reduce((m, n) => Math.max(m, n.wave), 0);
+
+  // ---- 1. build layers, inserting dummies for edges that span a gap --------
+  const layers: Cell[][] = Array.from({ length: maxLayer + 1 }, () => []);
+  const cellOf = new Map<string, Cell>();
+  const addCell = (c: Cell) => { layers[c.layer]!.push(c); cellOf.set(c.id, c); return c; };
+
   for (const n of nodes) {
-    if (!byWave.has(n.wave)) byWave.set(n.wave, []);
-    byWave.get(n.wave)!.push(n);
+    addCell({ id: `n${n.number}`, real: n.number, layer: n.wave, x: 0, width: NODE_W });
   }
-  const waves = [...byWave.keys()].sort((a, b) => a - b);
 
-  const blockers = new Map<number, number[]>();
+  const segments: Seg[] = [];
+  const chains = new Map<string, string[]>();   // edge id -> dummy cell ids
   for (const e of edges) {
-    if (!blockers.has(e.blocked)) blockers.set(e.blocked, []);
-    blockers.get(e.blocked)!.push(e.blockedBy);
+    const from = layerOf.get(e.blockedBy);
+    const to = layerOf.get(e.blocked);
+    if (from === undefined || to === undefined) continue;
+    const key = `${e.blockedBy}->${e.blocked}`;
+
+    if (to - from <= 1) {
+      segments.push({ from: `n${e.blockedBy}`, to: `n${e.blocked}` });
+      continue;
+    }
+    const via: string[] = [];
+    let prev = `n${e.blockedBy}`;
+    for (let l = from + 1; l < to; l++) {
+      const id = `d${key}@${l}`;
+      addCell({ id, real: null, layer: l, x: 0, width: DUMMY_W });
+      via.push(id);
+      segments.push({ from: prev, to: id });
+      prev = id;
+    }
+    segments.push({ from: prev, to: `n${e.blocked}` });
+    chains.set(key, via);
   }
 
-  const dependents = new Map<number, number[]>();
-  for (const e of edges) {
-    if (!dependents.has(e.blockedBy)) dependents.set(e.blockedBy, []);
-    dependents.get(e.blockedBy)!.push(e.blocked);
+  const above = new Map<string, string[]>();
+  const below = new Map<string, string[]>();
+  for (const s of segments) {
+    if (!above.has(s.to)) above.set(s.to, []);
+    above.get(s.to)!.push(s.from);
+    if (!below.has(s.from)) below.set(s.from, []);
+    below.get(s.from)!.push(s.to);
   }
 
-  // Sugiyama ordering: alternate downward and upward barycentre sweeps.
-  //
-  // A single downward pass only orders each row against the one above it, so
-  // the top row never moves and the crossings it causes are permanent. Sweeping
-  // both ways lets every row settle against both neighbours.
-  const rowsOf = waves.map((w) => byWave.get(w)!);
-  rowsOf[0]!.sort((a, b) => b.blastRadius - a.blastRadius || a.number - b.number);
+  // ---- 2. ordering: alternating sweeps, keep the best ---------------------
+  const slot = new Map<string, number>();
+  const reindex = () => layers.forEach((row) => row.forEach((c, i) => slot.set(c.id, i)));
 
-  const slot = new Map<number, number>();
-  const reindex = () => {
-    for (const row of rowsOf) row.forEach((n, i) => slot.set(n.number, i));
-  };
+  // Seed by impact so the heavy hitters start near each other.
+  const impact = new Map(nodes.map((n) => [`n${n.number}`, n.blastRadius]));
+  layers[0]?.sort((a, b) => (impact.get(b.id) ?? 0) - (impact.get(a.id) ?? 0));
   reindex();
 
-  const meanOf = (ids: number[] | undefined) => {
-    const xs = (ids ?? []).map((v) => slot.get(v)).filter((v): v is number => v !== undefined);
-    return xs.length ? xs.reduce((a, b) => a + b, 0) / xs.length : null;
+  const countCrossings = (): number => {
+    let total = 0;
+    for (let l = 0; l < layers.length - 1; l++) {
+      const pairs: Array<[number, number]> = [];
+      for (const c of layers[l]!) {
+        for (const t of below.get(c.id) ?? []) {
+          const a = slot.get(c.id), b = slot.get(t);
+          if (a !== undefined && b !== undefined) pairs.push([a, b]);
+        }
+      }
+      pairs.sort((p, q) => p[0] - q[0] || p[1] - q[1]);
+      for (let i = 0; i < pairs.length; i++) {
+        for (let j = i + 1; j < pairs.length; j++) {
+          if (pairs[i]![1] > pairs[j]![1]) total++;
+        }
+      }
+    }
+    return total;
   };
 
-  for (let pass = 0; pass < 4; pass++) {
+  const positionsOf = (ids: string[] | undefined) =>
+    (ids ?? []).map((v) => slot.get(v)).filter((v): v is number => v !== undefined);
+
+  const barycentre = (ids: string[] | undefined) => {
+    const p = positionsOf(ids);
+    return p.length ? p.reduce((a, b) => a + b, 0) / p.length : null;
+  };
+  const median = (ids: string[] | undefined) => {
+    const p = positionsOf(ids).sort((a, b) => a - b);
+    if (!p.length) return null;
+    const m = p.length >> 1;
+    return p.length % 2 ? p[m]! : (p[m - 1]! + p[m]!) / 2;
+  };
+
+  let best = layers.map((row) => row.map((c) => c.id));
+  let bestScore = countCrossings();
+
+  // Median tends to beat barycentre on sparse graphs and barycentre on dense
+  // ones, so alternate both rather than betting on either.
+  for (let pass = 0; pass < 16; pass++) {
     const downward = pass % 2 === 0;
-    const seq = downward ? rowsOf.slice(1) : rowsOf.slice(0, -1).reverse();
-    for (const row of seq) {
-      const key = new Map<number, number>();
-      row.forEach((n, i) => {
-        const m = meanOf(downward ? blockers.get(n.number) : dependents.get(n.number));
-        key.set(n.number, m ?? i);          // no neighbours: hold position
+    const heuristic = pass % 4 < 2 ? median : barycentre;
+    const seq = downward
+      ? layers.slice(1).map((_, i) => i + 1)
+      : layers.slice(0, -1).map((_, i) => i).reverse();
+
+    for (const li of seq) {
+      const row = layers[li]!;
+      const key = new Map<string, number>();
+      row.forEach((c, i) => {
+        const m = heuristic(downward ? above.get(c.id) : below.get(c.id));
+        key.set(c.id, m ?? i);
       });
-      row.sort((a, b) =>
-        key.get(a.number)! - key.get(b.number)! ||
-        b.blastRadius - a.blastRadius || a.number - b.number);
+      row.sort((a, b) => key.get(a.id)! - key.get(b.id)! ||
+                         (impact.get(b.id) ?? 0) - (impact.get(a.id) ?? 0));
       reindex();
+    }
+
+    const score = countCrossings();
+    if (score < bestScore) {
+      bestScore = score;
+      best = layers.map((row) => row.map((c) => c.id));
     }
   }
 
-  const order = slot;
-  const pos = new Map<number, { x: number; y: number }>();
-  const rows: Laid['rows'] = [];
+  // Restore the best ordering found.
+  layers.forEach((row, li) => {
+    const wanted = best[li]!;
+    row.sort((a, b) => wanted.indexOf(a.id) - wanted.indexOf(b.id));
+  });
+  reindex();
 
-  let y = 0;
-  for (const wave of waves) {
-    const row = byWave.get(wave)!;
-    const cols = Math.min(MAX_COLS, row.length);
-    const subRows = Math.ceil(row.length / cols);
-    row.forEach((n, i) => {
-      const c = i % cols;
-      const r = Math.floor(i / cols);
-      const rowWidth = Math.min(cols, row.length - r * cols) * (NODE_W + GAP_X) - GAP_X;
-      pos.set(n.number, {
-        x: -rowWidth / 2 + c * (NODE_W + GAP_X),
-        y: y + r * (NODE_H + 24),
-      });
-    });
-    const height = subRows * (NODE_H + 24) - 24;
-    rows.push({ wave, y, count: row.length, height });
-    y += height + GAP_Y;
+  // ---- 3. x assignment: pull each cell toward its neighbours, then de-overlap
+  for (const row of layers) {
+    let x = 0;
+    for (const c of row) { c.x = x; x += c.width + GAP_X; }
   }
 
+  const centreOf = (ids: string[] | undefined) => {
+    const xs = (ids ?? [])
+      .map((v) => cellOf.get(v))
+      .filter((c): c is Cell => c !== undefined)
+      .map((c) => c.x + c.width / 2);
+    return xs.length ? xs.reduce((a, b) => a + b, 0) / xs.length : null;
+  };
+
+  // Straightens long chains noticeably: a dummy sits directly under its parent
+  // instead of wherever its index happened to fall.
+  for (let pass = 0; pass < 6; pass++) {
+    const seq = pass % 2 === 0
+      ? layers.map((_, i) => i).slice(1)
+      : layers.map((_, i) => i).slice(0, -1).reverse();
+    for (const li of seq) {
+      const row = layers[li]!;
+      const desired = row.map((c) => {
+        const t = centreOf(pass % 2 === 0 ? above.get(c.id) : below.get(c.id));
+        return t === null ? c.x : t - c.width / 2;
+      });
+      row.forEach((c, i) => { c.x = desired[i]!; });
+      // left-to-right, then right-to-left, so nothing overlaps
+      for (let i = 1; i < row.length; i++) {
+        const prev = row[i - 1]!, cur = row[i]!;
+        const min = prev.x + prev.width + GAP_X;
+        if (cur.x < min) cur.x = min;
+      }
+      for (let i = row.length - 2; i >= 0; i--) {
+        const next = row[i + 1]!, cur = row[i]!;
+        const max = next.x - cur.width - GAP_X;
+        if (cur.x > max) cur.x = max;
+      }
+    }
+  }
+
+  // Centre every row on 0 so the whole graph is symmetric about the viewport.
+  let minX = Infinity, maxX = -Infinity;
+  for (const row of layers) {
+    for (const c of row) { minX = Math.min(minX, c.x); maxX = Math.max(maxX, c.x + c.width); }
+  }
+  const shift = -(minX + maxX) / 2;
+  for (const row of layers) for (const c of row) c.x += shift;
+
+  const yOf = (layer: number) => layer * LAYER_H;
+  const pointOf = (id: string) => {
+    const c = cellOf.get(id)!;
+    return { x: c.x + c.width / 2, y: yOf(c.layer) + NODE_H / 2 };
+  };
+
+  // ---- 4. emit ------------------------------------------------------------
   const criticalSet = new Set(opts.criticalPath);
-  const width = MAX_COLS * (NODE_W + GAP_X);
+  const byNumber = new Map(nodes.map((n) => [n.number, n]));
+
+  const rows = layers.map((row, li) => ({
+    wave: li,
+    y: yOf(li),
+    count: row.filter((c) => c.real !== null).length,
+    height: NODE_H,
+  }));
 
   const flowNodes: Node[] = [];
-
-  // Row labels are NODES, not overlays. Absolutely-positioned overlays live in
-  // viewport space, so they detach from the graph the moment you pan - which is
-  // why they were invisible.
   for (const r of rows) {
     flowNodes.push({
       id: `wave-${r.wave}`,
       type: 'waveLabel',
-      position: { x: -width / 2 - 190, y: r.y + r.height / 2 - 24 },
+      position: { x: minX + shift - 210, y: r.y + 10 },
       data: { wave: r.wave, count: r.count },
-      draggable: false, selectable: false, focusable: false,
-      zIndex: 0,
+      draggable: false, selectable: false, focusable: false, zIndex: 0,
     });
   }
+  for (const row of layers) {
+    for (const c of row) {
+      if (c.real === null) continue;
+      const n = byNumber.get(c.real)!;
+      flowNodes.push({
+        id: String(n.number),
+        type: 'issue',
+        position: { x: c.x, y: yOf(c.layer) },
+        data: {
+          node: n,
+          onCritical: criticalSet.has(n.number),
+          dim: opts.highlight !== null && !opts.highlight.has(n.number),
+          selected: opts.selected === n.number,
+        },
+        draggable: true,
+      });
+    }
+  }
 
-  flowNodes.push(...nodes.map((n) => ({
-    id: String(n.number),
-    type: 'issue',
-    position: pos.get(n.number) ?? { x: 0, y: 0 },
-    data: {
-      node: n,
-      onCritical: criticalSet.has(n.number),
-      dim: opts.highlight !== null && !opts.highlight.has(n.number),
-      selected: opts.selected === n.number,
-    },
-    draggable: true,
-  })));
-
-  // One edge style. Dependency direction is the only thing the picture needs to
-  // say; type, confidence and provenance live in the detail panel where there
-  // is room to explain them.
   const flowEdges: Edge[] = edges.map((e) => {
     const lit = opts.highlight !== null
       && opts.highlight.has(e.blocked) && opts.highlight.has(e.blockedBy);
     const dim = opts.highlight !== null && !lit;
+    const key = `${e.blockedBy}->${e.blocked}`;
+    const via = (chains.get(key) ?? []).map(pointOf);
     return {
-      id: `${e.blockedBy}->${e.blocked}`,
+      id: key,
       source: String(e.blockedBy),
       target: String(e.blocked),
-      // Bezier, not smoothstep: orthogonal routing made every edge share the
-      // same horizontal run between rows, which read as one bus bar rather
-      // than as N separate dependencies.
-      type: 'default',
+      type: via.length ? 'routed' : 'default',
       markerEnd: { type: 'arrowclosed' as const, width: 16, height: 16,
                    color: lit ? '#79c0ff' : '#6e7b91' },
       style: {
         stroke: lit ? '#79c0ff' : '#5a6478',
-        strokeWidth: lit ? 2.4 : 1.6,
-        opacity: dim ? 0.07 : 0.9,
+        strokeWidth: lit ? 2.4 : 1.5,
+        opacity: dim ? 0.06 : 0.85,
       },
       zIndex: lit ? 10 : 1,
-      data: { edge: e },
+      data: { edge: e, via },
     };
   });
 
-  return { nodes: flowNodes, edges: flowEdges, rows, width };
+  return { nodes: flowNodes, edges: flowEdges, rows, labelX: minX + shift - 210,
+           crossings: bestScore };
 }
 
-/** A node's full upstream and downstream, for hover highlighting. */
 export function connectedSet(center: number, edges: LatticeEdge[]): Set<number> {
   const up = new Map<number, number[]>();
   const down = new Map<number, number[]>();
@@ -232,7 +344,7 @@ export function connectedSet(center: number, edges: LatticeEdge[]): Set<number> 
   return out;
 }
 
-/** Issues with no dependencies at all - shown as a compact tray, not in the DAG. */
+/** Issues with no dependencies - shown as a compact tray, not in the DAG. */
 export function partition(nodes: GraphNode[], edges: LatticeEdge[]) {
   const touched = new Set<number>();
   for (const e of edges) { touched.add(e.blocked); touched.add(e.blockedBy); }

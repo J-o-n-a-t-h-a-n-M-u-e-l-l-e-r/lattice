@@ -8,9 +8,11 @@ import type { GraphPayload } from '@lattice/types';
 import { api } from '../lib/api';
 import { connectedSet, layout, partition, reduce } from './graph-layout';
 import { IssueNode, WaveLabel } from './IssueNode';
+import { RoutedEdge } from './RoutedEdge';
 import { NodePanel } from './NodePanel';
 
 const nodeTypes = { issue: IssueNode, waveLabel: WaveLabel };
+const edgeTypes = { routed: RoutedEdge };
 
 export function GraphView({ initial, initialError, repo }: {
   initial: GraphPayload | null;
@@ -84,6 +86,7 @@ export function GraphView({ initial, initialError, repo }: {
             nodes={laid.nodes}
             edges={laid.edges}
             nodeTypes={nodeTypes}
+            edgeTypes={edgeTypes}
             fitView
             fitViewOptions={{ padding: 0.12 }}
             minZoom={0.1}
@@ -126,6 +129,7 @@ export function GraphView({ initial, initialError, repo }: {
             ['dependencies', view.edgeCount],
             ['waves', stats.waves],
             ['critical path', `${stats.criticalPathDays}d`],
+            ['crossings', laid.crossings],
           ].map(([k, v]) => (
             <div key={String(k)}>
               <span style={{ color: '#8b93a7' }}>{k} </span>
