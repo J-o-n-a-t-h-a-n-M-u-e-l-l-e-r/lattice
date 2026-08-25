@@ -4,6 +4,8 @@ import { useEffect, useRef, useState, type CSSProperties } from 'react';
 import { Logo } from './Logo';
 import styles from './PitchDeck.module.css';
 
+const LAST_SLIDE = 4;
+
 type IssueCard = {
   number: number;
   title: string;
@@ -91,7 +93,7 @@ export function PitchDeck() {
       setGraphStage((stage) => stage + 1);
       return;
     }
-    setSlide((current) => Math.min(current + 1, 3));
+    setSlide((current) => Math.min(current + 1, LAST_SLIDE));
   };
 
   const previous = () => {
@@ -122,7 +124,7 @@ export function PitchDeck() {
         channel.postMessage({ source: 'lattice-pitch-deck', type: 'state', ...deckState.current });
       }
       if (data.type === 'go-to') {
-        const destination = Math.max(0, Math.min(3, Number(data.slide)));
+        const destination = Math.max(0, Math.min(LAST_SLIDE, Number(data.slide)));
         setSlide(destination);
         setGraphStage(destination === 1 ? Math.max(0, Math.min(2, Number(data.graphStage) || 0)) : 0);
       }
@@ -335,6 +337,112 @@ export function PitchDeck() {
       </section>
 
       <section className={`${styles.slide} ${slide === 3 ? styles.active : ''}`} aria-hidden={slide !== 3}>
+        <div className={styles.archHeading}>
+          <h2>The System Architecture</h2>
+        </div>
+
+        <div className={styles.archStage}>
+          <svg className={styles.archSvg} viewBox="0 0 1250 452" role="img"
+               aria-label="GitHub issues flow into LLM inference, which fills the graph database. The graph feeds a dependency view for people and an MCP server for agents, and the agents report back into the graph.">
+
+            <g className={styles.wire}>
+              <path d="M122 120H256" />
+              <path d="M346 120H478" />
+              <path d="M562 120H756" />
+              <path d="M562 126C644 152 700 182 700 250" />
+              <path d="M742 300H884" />
+              <path d="M978 300H1114" />
+              <path d="M1218 300H1232V416H640V300H664" />
+            </g>
+            <g className={styles.flow}>
+              <path d="M122 120H256" />
+              <path d="M346 120H478" />
+              <path d="M562 120H756" />
+              <path d="M562 126C644 152 700 182 700 250" />
+              <path d="M742 300H884" />
+              <path d="M978 300H1114" />
+              <path d="M1218 300H1232V416H640V300H664" />
+            </g>
+            <g className={styles.head}>
+              <path d="M250 113.5 260 120l-10 6.5" />
+              <path d="M472 113.5 482 120l-10 6.5" />
+              <path d="M750 113.5 760 120l-10 6.5" />
+              <path d="M693.5 248 700 258l6.5-10" />
+              <path d="M878 293.5 888 300l-10 6.5" />
+              <path d="M1108 293.5 1118 300l-10 6.5" />
+              <path d="M658 293.5 668 300l-10 6.5" />
+            </g>
+
+            <g className={styles.node}>
+              <path className={styles.glyphSolid} transform="translate(39,80) scale(3.42)"
+                    d="M12 .3a12 12 0 0 0-3.8 23.4c.6.1.8-.3.8-.6v-2.2c-3.3.7-4-1.6-4-1.6-.6-1.4-1.4-1.8-1.4-1.8-1-.7.1-.7.1-.7 1.2.1 1.8 1.2 1.8 1.2 1 1.8 2.8 1.3 3.5 1 0-.8.4-1.3.7-1.6-2.7-.3-5.5-1.3-5.5-5.9 0-1.3.5-2.4 1.2-3.2 0-.4-.5-1.6.2-3.2 0 0 1-.3 3.3 1.2a11.5 11.5 0 0 1 6 0c2.3-1.5 3.3-1.2 3.3-1.2.7 1.6.2 2.8.1 3.2.8.8 1.2 1.9 1.2 3.2 0 4.6-2.8 5.6-5.5 5.9.5.4.9 1.1.9 2.3v3.3c0 .3.2.7.8.6A12 12 0 0 0 12 .3Z" />
+              <text x="80" y="192">GitHub issues</text>
+            </g>
+
+            <g className={styles.node}>
+              <g className={styles.glyph}>
+                <rect x="266" y="86" width="68" height="68" rx="12" />
+                <rect x="283" y="103" width="34" height="34" rx="6" />
+                <path d="M283 86V74M300 86V74M317 86V74M283 154v12M300 154v12M317 154v12M266 103h-12M266 120h-12M266 137h-12M334 103h12M334 120h12M334 137h12" />
+              </g>
+              <text x="300" y="192">LLM inference</text>
+            </g>
+
+            <g className={styles.node}>
+              <g className={`${styles.glyph} ${styles.glyphKey}`}>
+                <ellipse cx="520" cy="92" rx="40" ry="14" />
+                <path d="M480 92v56c0 7.7 17.9 14 40 14s40-6.3 40-14V92" />
+                <path d="M480 120c0 7.7 17.9 14 40 14s40-6.3 40-14" />
+              </g>
+              <text x="520" y="192">The graph</text>
+            </g>
+
+            <g className={styles.node}>
+              <g className={styles.glyph}>
+                <circle cx="773" cy="94" r="12" />
+                <circle cx="827" cy="94" r="12" />
+                <circle cx="800" cy="148" r="12" />
+                <path d="M785 94h30M780 105l13 32M820 105l-13 32" />
+              </g>
+              <text x="800" y="192">Dependency view</text>
+              <text x="800" y="58" className={styles.branchTag}>01</text>
+            </g>
+
+            <g className={styles.node}>
+              <g className={styles.glyph}>
+                <path d="M682 272v-14M718 272v-14M670 272h60v16a30 30 0 0 1-60 0v-16ZM700 318v16" />
+              </g>
+              <text x="700" y="372">MCP</text>
+              <text x="742" y="262" className={styles.branchTag}>02</text>
+            </g>
+
+            <g className={styles.node}>
+              <g className={styles.glyph}>
+                <path d="M892 272h56M892 296h56M892 320h56" />
+                <circle cx="908" cy="272" r="7" />
+                <circle cx="930" cy="296" r="7" />
+                <circle cx="940" cy="320" r="7" />
+              </g>
+              <text x="930" y="372">Orchestration</text>
+            </g>
+
+            <g className={styles.node}>
+              <g className={styles.glyph}>
+                <rect x="1124" y="276" width="72" height="48" rx="10" />
+                <circle cx="1146" cy="300" r="6" />
+                <circle cx="1174" cy="300" r="6" />
+                <path d="M1160 276v-14M1204 288h14v24h-14M1116 288h-14v24h14" />
+              </g>
+              <text x="1160" y="372">Agent pool</text>
+            </g>
+
+            <text x="936" y="438" className={styles.wireLabel}>REPORTS BACK · THE GRAPH LEARNS</text>
+          </svg>
+        </div>
+
+      </section>
+
+      <section className={`${styles.slide} ${slide === 4 ? styles.active : ''}`} aria-hidden={slide !== 4}>
         <div className={styles.demoHeading}>
           <p className={styles.kicker}>THE DEMO / 01:20</p>
           <h2>Watch the plan<br />become executable.</h2>

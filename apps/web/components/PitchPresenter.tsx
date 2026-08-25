@@ -28,6 +28,10 @@ const slides = [
     note: 'The point is not visualization. One reasoning pass produces an auditable schedule that humans and agents share.',
   },
   {
+    title: 'The system architecture',
+    note: 'Walk the spine left to right: GitHub in, one inference pass, one graph. Then the split — a view for people, MCP for agents. Land on the return arrow: agents report what they discover, so the graph gets better as work happens. Say out loud that nothing is written back to GitHub.',
+  },
+  {
     title: 'Watch it become executable.',
     note: 'Play the 75-second recording. Show the issue event, evidence trail, work wave, and agent feedback loop.',
   },
