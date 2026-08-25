@@ -6,6 +6,7 @@ import styles from './PitchPresenter.module.css';
 
 type DeckState = {
   slide: number;
+  playbookStage: number;
   graphStage: number;
   blackout: boolean;
 };
@@ -54,7 +55,7 @@ function IssueOpenedIcon() {
   );
 }
 
-function Preview({ index, graphStage = 0 }: { index: number; graphStage?: number }) {
+function Preview({ index, graphStage = 0, playbookStage = 0 }: { index: number; graphStage?: number; playbookStage?: number }) {
   if (index === 0) {
     const points = [
       'Write the demo story',
@@ -73,7 +74,12 @@ function Preview({ index, graphStage = 0 }: { index: number; graphStage?: number
         </div>
         <div className={styles.previewPlaybookRule} />
         <ol className={styles.previewPlaybookList}>
-          {points.map((point, pointIndex) => <li key={point}><b>{pointIndex + 1}</b><span>{point}</span></li>)}
+          {points.map((point, pointIndex) => (
+            <li key={point}>
+              <b>{pointIndex + 1}</b>
+              <span className={pointIndex === 5 && playbookStage > 0 ? styles.previewHighlight : undefined}>{point}</span>
+            </li>
+          ))}
         </ol>
         <p>If there&apos;s one slide to screenshot, this is it.</p>
       </div>
@@ -156,7 +162,7 @@ function formatElapsed(value: number) {
 }
 
 export function PitchPresenter() {
-  const [deck, setDeck] = useState<DeckState>({ slide: 0, graphStage: 0, blackout: false });
+  const [deck, setDeck] = useState<DeckState>({ slide: 0, playbookStage: 0, graphStage: 0, blackout: false });
   const [connected, setConnected] = useState(false);
   const [running, setRunning] = useState(false);
   const [elapsed, setElapsed] = useState(0);
@@ -173,6 +179,7 @@ export function PitchPresenter() {
       if (!data || data.source !== 'lattice-pitch-deck' || data.type !== 'state') return;
       setDeck({
         slide: data.slide,
+        playbookStage: data.slide === 0 ? Math.max(0, Math.min(1, Number(data.playbookStage) || 0)) : 0,
         graphStage: data.slide === 1 ? Math.max(0, Math.min(2, Number(data.graphStage) || 0)) : 0,
         blackout: data.blackout,
       });
@@ -212,6 +219,7 @@ export function PitchPresenter() {
       source: 'lattice-pitch-presenter',
       type: 'go-to',
       slide,
+      playbookStage: 0,
       graphStage: 0,
     });
   };
@@ -260,15 +268,18 @@ export function PitchPresenter() {
     return () => window.removeEventListener('keydown', onKeyDown);
   });
 
-  const next = deck.slide === 1 && deck.graphStage < 2
-    ? {
-        slide: 1,
-        graphStage: deck.graphStage + 1,
-        title: deck.graphStage === 0 ? 'Organize the graph' : graphTitleStage.title,
-      }
-    : deck.slide < slides.length - 1
-      ? { slide: deck.slide + 1, graphStage: 0, title: slides[deck.slide + 1]!.title }
-      : null;
+  const next = deck.slide === 0 && deck.playbookStage < 1
+    ? { slide: 0, playbookStage: 1, graphStage: 0, title: 'Highlight parallel work' }
+    : deck.slide === 1 && deck.graphStage < 2
+      ? {
+          slide: 1,
+          playbookStage: 0,
+          graphStage: deck.graphStage + 1,
+          title: deck.graphStage === 0 ? 'Organize the graph' : graphTitleStage.title,
+        }
+      : deck.slide < slides.length - 1
+        ? { slide: deck.slide + 1, playbookStage: 0, graphStage: 0, title: slides[deck.slide + 1]!.title }
+        : null;
 
   return (
     <main className={styles.presenter}>
@@ -300,7 +311,7 @@ export function PitchPresenter() {
       <section className={styles.workspace}>
         <article className={`${styles.panel} ${styles.currentPanel}`}>
           <header><span>Current slide</span><b>{currentTitle}</b></header>
-          <div className={styles.previewWrap}><Preview index={deck.slide} graphStage={deck.graphStage} /></div>
+          <div className={styles.previewWrap}><Preview index={deck.slide} graphStage={deck.graphStage} playbookStage={deck.playbookStage} /></div>
           <div className={styles.progress}><span style={{ width: `${((deck.slide + 1) / slides.length) * 100}%` }} /></div>
         </article>
 
@@ -308,7 +319,7 @@ export function PitchPresenter() {
           <article className={`${styles.panel} ${styles.nextPanel}`}>
             <header><span>Next</span><b>{next === null ? 'End of presentation' : next.title}</b></header>
             <div className={styles.previewWrap}>
-              {next === null ? <p className={styles.end}>End of presentation</p> : <Preview index={next.slide} graphStage={next.graphStage} />}
+              {next === null ? <p className={styles.end}>End of presentation</p> : <Preview index={next.slide} graphStage={next.graphStage} playbookStage={next.playbookStage} />}
             </div>
           </article>
           <article className={`${styles.panel} ${styles.notesPanel}`}>

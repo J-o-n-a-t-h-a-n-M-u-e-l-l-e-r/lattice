@@ -139,12 +139,17 @@
 }
 
 .playbookHighlight {
-  border: 2px solid var(--light-blue);
+  border: 2px solid transparent;
   border-radius: 0.6em;
   box-decoration-break: clone;
   -webkit-box-decoration-break: clone;
   display: inline;
   padding: 0.08em 0.45em;
+  transition: border-color 0.4s ease;
+}
+
+.playbookHighlightActive {
+  border-color: var(--light-blue);
 }
 
 .kicker {
