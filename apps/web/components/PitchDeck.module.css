@@ -1104,15 +1104,29 @@
 }
 
 /* ---- Slide: top-down vs bottom-up ---- */
+/* Match the heading treatment of .playbookHeading h1 / .archHeading h2 rather
+   than the deck's older Impact/condensed lockup. */
 .dualHeading {
-  top: clamp(3.5rem, 8vh, 5.5rem);
+  left: clamp(1.25rem, 8vw, 9rem);
+  max-width: none;
+  top: clamp(5rem, 9vh, 7rem);
 }
 
 .dualHeading h2 {
-  font-size: clamp(2.2rem, 3.8vw, 4rem);
+  color: #18212b;
+  font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Helvetica, Arial, sans-serif;
+  font-size: clamp(1.75rem, 2.9vw, 2.85rem);
+  font-stretch: normal;
+  font-weight: 600;
+  letter-spacing: -0.035em;
+  line-height: 1.1;
+  margin: 0;
+  text-transform: none;
+  white-space: nowrap;
 }
 
 .dualMap {
+  align-items: start;
   bottom: clamp(3rem, 8vh, 5.5rem);
   display: grid;
   gap: clamp(1rem, 2.5vw, 2.5rem);
@@ -1120,7 +1134,7 @@
   left: clamp(1.25rem, 8vw, 9rem);
   position: absolute;
   right: clamp(1.25rem, 8vw, 9rem);
-  top: clamp(11rem, 26vh, 15rem);
+  top: clamp(9.5rem, 22vh, 13rem);
 }
 
 .dualShot {
@@ -1148,11 +1162,14 @@
   letter-spacing: 0.12em;
 }
 
+/* Both shots share one ratio so the two panels end at the same baseline; the
+   panels then size to their content instead of stretching to the slide floor. */
 .dualShot img {
+  aspect-ratio: 1202 / 1104;
   background: #fafbfc;
   display: block;
-  flex: 1;
-  min-height: 0;
+  flex: none;
+  height: auto;
   object-fit: contain;
   object-position: top center;
   width: 100%;

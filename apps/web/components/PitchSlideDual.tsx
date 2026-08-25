@@ -6,12 +6,7 @@ export function PitchSlideDual() {
   return (
     <>
       <div className={`${styles.systemHeading} ${styles.dualHeading}`}>
-        <p className={styles.kicker}>TWO WAYS TO READ ONE GRAPH</p>
-        <h2>
-          Top-down meets
-          <br />
-          <em>bottom-up.</em>
-        </h2>
+        <h2>Top-down meets bottom-up.</h2>
       </div>
 
       <div className={styles.dualMap}>
