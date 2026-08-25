@@ -1,0 +1,57 @@
+# 00 · Context
+
+## The challenge
+
+Microsoft Hackathon 2026 — *"Collaboration using GitHub Planning & Tracking Tools in the Agentic Age"*.
+
+The organising question, verbatim:
+
+> **What does good collaboration look like when part of your team isn't human?**
+
+Entries are expected to use GitHub's planning and tracking primitives — Issues, Projects, milestones, sub-issues, Actions, the GraphQL API — together with AI agents.
+
+## Judging criteria (verbatim, with our read on each)
+
+| Criterion | What they said | How Lattice answers it |
+|---|---|---|
+| **Answers the challenge** | *"Does it actually say something about collaboration in the agentic age?"* | Coordination between human and non-human teammates **is** scheduling. Not a generic AI feature with a collaboration label on it. |
+| **Agentic depth** | *"Are agents doing meaningful work, with sensible human checkpoints — or is AI bolted on?"* | The agent does the genuinely hard part (semantic inference over a whole backlog). The human approves every edge before it is written. Agents may propose dependencies; only humans commit them. |
+| **Craft** | *"Does it work? Can someone else run it from your README?"* | `DEMO_MODE=1` fixture path means a judge with no tokens still sees the whole app. Budget real time for the README — it is scored. |
+| **Collaboration, shown** | *"Your issues and board are part of the submission. We'd rather see a messy honest trail than a tidy fake one."* | We dogfood: our own issues, analysed by our own tool. `.lattice/decisions.json` is committed, so git history literally contains a record of a human overruling a model. |
+| **Demo** | *"Can you make a stranger understand it in two minutes?"* | See [`07-demo-script.md`](07-demo-script.md). Designed backwards from the two minutes. |
+
+Also stated: **"Being unfinished is not disqualifying. A half-built thing with clear thinking beats a polished thing with none."** And, on the honest-retro field: **"Honesty scores well."**
+
+Both of those shape our strategy. We ship a narrow, working, well-explained thing and we write down what didn't work.
+
+## Submission requirements (hard)
+
+From the hackathon repo's issue templates:
+
+- **Code lives in our own repo.** The README there is explicit: *"Your code lives wherever you want — a separate repo is completely fine and usually easier."* This repo is that repo.
+- **An idea issue must be filed first**, before the hackathon starts, using `1-challenge-idea.yml`. Required fields: `summary`, `problem`, `agentic_angle`, `effort`, `availability`, plus both acknowledgement checkboxes.
+- **One submission issue per team**, using `2-project-submission.yml`. Required: `team`, `members`, `idea_issue` (must link our idea issue), `what_it_does`, `repo`, `demo`, `agentic`, `how_we_collaborated` — **marked "this is scored"** — `learned`, and four checkboxes:
+  - Organizers can access the code repository (public, or we've invited them)
+  - The repo has a README that explains how to run the project
+  - The demo link works for someone outside our team
+  - We linked the original idea issue
+
+**Consequence:** keep a running notes file during the hackathon, including the things that went wrong. `how_we_collaborated` and `learned` are scored free-text and they are much easier to write from notes than from memory at hour 17.
+
+## Prior art on the hackathon board — and how we differ
+
+Two organizer examples are adjacent:
+
+- **#4 `/split`** — decompose an epic into sub-issues and route the mechanical ones to Copilot.
+- **#7 Splitter** — the paired example submission.
+
+**Decomposition is not ordering.** Those create *hierarchy* (parent → child). Lattice creates the *blocking relation between siblings* and the schedule that falls out of it. Worth one explicit sentence in our submission — it shows we read the board.
+
+Notably, #7's own retrospective flags exactly our gap: they added a `blocked-on-human` label at hour 20 because *"the interesting queue wasn't 'what's in progress' but 'what's waiting on one of us to look at it.'"*
+
+Also on the board: **#9 "[Idea] AI Sprint Planner"** (team "Claude plan") — a different team, adjacent idea. A sprint plan is downstream of exactly this graph. Worth cross-linking from our idea issue; the templates explicitly encourage linking near-duplicates.
+
+## What we deliberately are not building
+
+- **File-level conflict detection as a first-class feature.** Mapping issues to the code they'd touch and flagging pairs that would collide is genuinely the strongest differentiator available — and genuinely a second project. We keep a lightweight `conflict_risk` score (it falls out of the path/symbol index we build anyway) and use it only for agent dispatch, not as a headline.
+- Projects v2 custom-field writing, auth/multi-tenancy, any persistence beyond JSON files.

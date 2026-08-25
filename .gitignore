@@ -1,0 +1,18 @@
+node_modules/
+.next/
+out/
+dist/
+*.tsbuildinfo
+
+.env
+.env.local
+.env*.local
+
+# Runtime agent state — ephemeral, never committed.
+.lattice/leases.json
+
+# Ingest cache — large, regenerable. Commit a trimmed snapshot as a fixture instead.
+.lattice/raw.json
+
+.DS_Store
+*.log
