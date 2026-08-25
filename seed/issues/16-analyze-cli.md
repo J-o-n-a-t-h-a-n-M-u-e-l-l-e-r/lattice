@@ -20,7 +20,7 @@ Every run is recorded in the `runs` table with its trigger, request count, edge 
 
 **Scope**
 
-- `scripts/analyze.ts`, `src/lib/infer/run.ts`
+- `apps/backend/src/scripts/analyze.ts`, `apps/backend/src/infer/run.ts`
 
 **Done when**
 

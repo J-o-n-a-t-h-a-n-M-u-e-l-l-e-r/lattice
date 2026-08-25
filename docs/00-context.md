@@ -67,6 +67,6 @@ Also on the board: **#9 "[Idea] AI Sprint Planner"** (team "Claude plan") — a 
 
 ## What we deliberately are not building
 
-- **File-level conflict detection as a first-class feature.** Mapping issues to the code they'd touch and flagging pairs that would collide is genuinely the strongest differentiator available — and genuinely a second project. We keep a lightweight `conflict_risk` score (it falls out of the path/symbol index we build anyway) and use it only for agent dispatch, not as a headline.
+- **File-level conflict detection.** Mapping issues to the code they'd touch and flagging pairs that would collide was considered and dropped. The dependency graph already gives a deterministic answer to what can run in parallel — wave 0 is mutually independent by construction — and bolting a fuzzy text-similarity score on top of a computed result only adds a way to be wrong.
 - **Writing anything back to GitHub.** Deliberate, not a shortcut — see above.
 - Projects v2 custom-field writing, auth/multi-tenancy.

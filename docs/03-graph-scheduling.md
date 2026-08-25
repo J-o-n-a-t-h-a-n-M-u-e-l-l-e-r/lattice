@@ -146,18 +146,6 @@ Every row in the UI shows its reason in words: *"Ready · on critical path · un
 
 ---
 
-## Conflict risk
-
-Reuses the IDF-weighted path/symbol inverted index built in L1 of the inference pipeline:
-
-```
-conflict(a, b) = IDF-weighted Jaccard of extracted paths and symbols
-```
-
-Two ready issues with `conflict > 0.4` should not be dispatched to agents in the same wave. This is the bridge between the graph work and the Copilot work, and it's about fifteen lines.
-
----
-
 ## Serialising the graph for the UI
 
 `src/graph/serialize.ts` — turn the scheduled graph into the exact payload the graph view consumes: nodes with wave, state, blast radius, critical-path flag and issue URL; edges with type, confidence and source.

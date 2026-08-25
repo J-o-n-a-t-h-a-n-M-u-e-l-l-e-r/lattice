@@ -13,7 +13,7 @@ Put a **"What this doesn't do yet"** section in the README. The judges said unfi
    *Mitigation, in layers:* **nothing is written to GitHub**, so a wrong edge cannot corrupt the repo — it only mis-orders our own suggestions until the next run; typed edges; a verbatim-evidence requirement checked against source text; a blocking threshold, so low-confidence edges are stored and shown but constrain nothing; `given` edges immutable; and a per-run rejection log. Say this in the README's first section rather than burying it.
 
 2. **No cheap fallback since the regex layer was cut.** On a repo with no pre-existing `blocked_by`, L1 produces nothing and the graph is entirely model-inferred.
-   *Mitigation:* the response cache and the committed fixture snapshot. Accept that `--no-llm` is now a near-empty graph rather than a degraded one, and say so.
+   *Mitigation:* the response cache, so a repeat run costs nothing and cannot fail; and the committed fixture, so the app always has a graph to show. There is no model-free mode — deterministic edges alone are near-empty on a fresh repo, and pretending otherwise would be a fallback that doesn't work.
 
 3. **No ground truth → unverifiable quality claims.**
    *Mitigation:* hand-label ~40 candidate pairs from the dogfood corpus (about 30 minutes) and report precision@0.85 and recall. Almost nobody else will have a number.
@@ -51,10 +51,10 @@ Put a **"What this doesn't do yet"** section in the README. The judges said unfi
 
 | If this fails | Fall back to | Cost |
 |---|---|---|
-| LLM layer slow / expensive / noisy | The response cache, then the committed fixture. Deterministic edges alone are near-empty on a fresh repo. | 0 |
+| LLM layer slow / expensive / noisy | The response cache, then the committed fixture | 0 |
 | Model returns malformed / off-schema JSON | Expected — Ox Alpha does not enforce schemas. Zod `safeParse` + one retry with the error fed back; drop the cluster on a second failure | 0 — designed in |
 | **Ox Alpha withdrawn** (stealth preview, no stability guarantee) | Swap `LATTICE_MODEL` to any OpenAI-compatible OpenRouter model. The forced-tool + Zod path works on both | minutes |
-| **OpenRouter 429 / daily quota exhausted** | `--no-llm` or `DEMO_MODE=1`; disk cache means re-runs cost nothing | 0 — if the cache exists |
+| **OpenRouter 429 / daily quota exhausted** | The disk cache means re-runs cost nothing; `DEMO_MODE=1` serves the committed fixture. Buy $10 of credits for 1000/day. | 0 — if the cache exists |
 | dagre layout looks bad | Swap in elkjs behind the same `nodes + edges → positions` interface | ~20 min |
 | Copilot dispatch fails at demo time | Dry-run payload view + `scripts/agent.ts` local MCP agent | 0 — built earlier |
 | Copilot can't reach the MCP server (no OAuth, secret naming, tunnel) | Demo MCP through Claude Code or MCP Inspector — same server, same tools | 0 |

@@ -4,9 +4,11 @@ Read this before changing anything. It applies to Copilot coding agent, Claude C
 
 ## What this project is
 
-Lattice reads a repo's issues, infers the dependency graph between them, stores it, and serves the resulting schedule to coding agents over MCP. It runs automatically on issue events and a schedule — no approval step, no button.
+Lattice reads a repo's issues, infers the dependency graph between them, stores it, and serves the resulting schedule over a REST API (to the web UI) and MCP (to coding agents). It runs automatically on issue events and a schedule — no approval step, no button.
 
-**GitHub is a data source, not a data store. Lattice never writes to it.** See [`README.md`](README.md) for the pitch and [`docs/01-architecture.md`](docs/01-architecture.md) for the component map.
+**GitHub is a data source, not a data store. Lattice never writes to it.**
+
+Two services in one npm-workspaces monorepo: `apps/backend` (pipeline, store, REST, MCP) and `apps/web` (the interactive graph). `apps/web` consumes the REST API and holds no database URL, GitHub token or model key. See [`README.md`](README.md) for the pitch and [`docs/01-architecture.md`](docs/01-architecture.md) for the component map.
 
 ## Ground rules
 
@@ -23,20 +25,33 @@ Lattice reads a repo's issues, infers the dependency graph between them, stores 
 - Stay inside the files listed under **Scope** in the issue body. Five people and several agents are working this repo in parallel; the scope list is the collision-avoidance mechanism.
 - If you discover the issue is genuinely blocked by something not listed, **say so and stop** rather than expanding scope. If the Lattice MCP server is available, call `report_dependency` so the graph learns it.
 
+## Build and test
+
+Two commands, from the repo root:
+
+```
+npm run build     # both services
+npm test          # all tests, and emits artifacts/graph.json
+```
+
+`npm test` writes the serialised graph as JSON, which makes the schedule diffable — change the cycle-breaking weights and the critical path shift shows up as a reviewable diff. Neither command needs a database or credentials.
+
 ## Conventions
 
 - **TypeScript, strict mode.** No `any` in `src/lib/**` without a comment explaining why.
-- **Pure functions in `src/graph/**`.** No I/O, no network, no `process.env`. These are the parts we unit-test and the parts we explain on stage.
-- **All GitHub network access goes through `src/lib/github/`.** Nothing else imports Octokit.
-- **All LLM access goes through `src/lib/infer/llm.ts`.** Nothing else imports the OpenRouter client. Model ID and base URL come from env, never hardcoded at a call site — see [`docs/10-model-provider.md`](docs/10-model-provider.md).
+- **Pure functions in `apps/backend/src/graph/**`.** No I/O, no network, no `process.env`. These are the parts we unit-test and the parts we explain on stage.
+- **All GitHub network access goes through `apps/backend/src/github/`.** Nothing else imports Octokit, and `apps/web` must not be able to.
+- **`apps/web` talks only to the REST API.** No store import, no Octokit, no model client. If a change needs data the API doesn't expose, extend the API (#53) rather than reaching around it.
+- **All LLM access goes through `apps/backend/src/infer/llm.ts`.** Model ID and base URL come from env, never hardcoded — see [`docs/10-model-provider.md`](docs/10-model-provider.md). There is always a model; there is no model-free mode.
 - Every module that reads config takes it as an argument. Read `process.env` at the entrypoints only (`scripts/*.ts`, route handlers).
 - Prefer a small named function over a clever one-liner. Several of these algorithms get explained to judges out loud.
 
 ## Testing
 
-- `src/graph/**` gets real unit tests against hand-built fixtures — a known DAG, a planted cycle, a diamond. These are cheap and they are the ones that matter.
+- `apps/backend/src/graph/**` gets real unit tests against hand-built fixtures — a known DAG, a planted cycle, a diamond. These are cheap and they are the ones that matter.
+- `npm test` also emits `artifacts/graph.json`; if that comes out well-formed and acyclic, the whole pure-functional core is wired up correctly.
 - The inference layers are validated against a hand-labelled gold set (see issue `[X]  Gold-set labelling`), not by unit test. Report precision, don't assert it.
-- Anything touching the GitHub write path must be exercised in `--dry-run` before it runs for real.
+- Copilot dispatch must be exercised in `--dry-run` before it assigns anything for real. It is the only write in the project.
 
 ## Things that will waste your time if you don't know them
 

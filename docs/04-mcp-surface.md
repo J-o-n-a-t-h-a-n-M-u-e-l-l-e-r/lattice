@@ -20,7 +20,7 @@ The official GitHub MCP server already exposes issue reads and writes. Ours expo
 
 ## The seven tools
 
-All reads are served from the store, never by recomputing or calling GitHub. See [`11-graph-store.md`](11-graph-store.md).
+All reads are served from the store, never by recomputing or calling GitHub. The REST API in [`12-rest-api.md`](12-rest-api.md) exposes the same data to the web app — one computation, two audiences.
 
 ### 1 · `list_ready_work` — the main event
 
@@ -30,8 +30,7 @@ list_ready_work({ limit?: number = 5, area?: string, exclude_claimed?: boolean =
         number, title, url, wave, effort_days, blast_radius, on_critical_path,
         slack_days, unblocks: number[],
         reason: "ready · critical path · unblocks 7",
-        suggested_base_ref: string,
-        conflict_risk: [{ number, score, shared: string[] }]
+        suggested_base_ref: string
       }] }
 ```
 
@@ -42,8 +41,8 @@ list_ready_work({ limit?: number = 5, area?: string, exclude_claimed?: boolean =
 ```ts
 claim_next_issue({ agent_id: string, lease_minutes?: number = 45, area?: string })
  -> { claimed: true, issue: {...}, lease_expires_at, base_ref,
-      briefing: "You are unblocking #19 and #23. Do not touch src/graph/scc.ts —
-                 agent-b holds #12." }
+      briefing: "You are unblocking #19 and #23. #19 consumes the type you
+                 export here — keep its signature stable." }
   | { claimed: false, reason: 'no_ready_work' | 'all_claimed', next_available_at? }
 ```
 
@@ -72,7 +71,7 @@ explain_dependency({ blocked: number, blocked_by: number })
  -> { type, confidence, source, rationale, evidence, first_seen_run, written_to_github }
 ```
 
-The reasoning, exposed to the agent. **This is what replaced receipt comments** — rather than spamming every issue with a comment explaining its blockers, the explanation is retrievable on demand from the store.
+The reasoning, exposed to the agent. **This is the only place an inferred edge's justification exists** — nothing is written to GitHub, so this tool and the node panel are how anyone checks why an edge is there.
 
 If an agent thinks an edge is wrong, it can see the evidence before arguing with it — and then `report_dependency` the correction.
 

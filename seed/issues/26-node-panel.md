@@ -19,7 +19,7 @@ Showing dependents with *what they need from you* prevents the most expensive mi
 
 **Scope**
 
-- `app/components/graph/NodePanel.tsx`
+- `apps/web/app/components/graph/NodePanel.tsx`
 
 **Done when**
 

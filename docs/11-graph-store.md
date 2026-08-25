@@ -118,7 +118,7 @@ The store is the read API for the whole system:
 | Graph view | full node + edge set for a repo, latest run |
 | `list_ready_work` | `schedule` rows where `ready`, ordered by blast radius |
 | `explain_dependency` | one `edges` row with rationale and evidence — the only place the reasoning exists |
-| Dispatch | ready set plus conflict scores |
+| Dispatch | the ready set, ranked |
 | Quality metrics | `runs` + `rejections` joined against the gold set |
 
 Keep a `latest_run_id` per repo so every read is consistent — a read must never see half of one run and half of the next.

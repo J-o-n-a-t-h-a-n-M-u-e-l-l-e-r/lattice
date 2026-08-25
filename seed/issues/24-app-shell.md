@@ -14,12 +14,12 @@ Note there is **no `/review`** — the pipeline is unsupervised. `/runs` is the 
 
 **Scope**
 
-- `app/layout.tsx`, route shells, shared components
+- `apps/web/app/layout.tsx`, route shells, shared components, `apps/web/lib/api.ts`
 
 **Done when**
 
 - [ ] Both routes render with real navigation
 - [ ] Loading, empty and error states exist and read well
-- [ ] Reads through `GraphStore`, falling back to the committed fixture
+- [ ] Fetches through the typed REST client — the web app never touches the store or a GitHub token
 
 **Depends on:** the scaffold in #2 and the store interface in #3. It reads the fixture from #4, so it is never blocked on the inference pipeline.

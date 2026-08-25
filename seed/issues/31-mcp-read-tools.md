@@ -4,7 +4,7 @@
 
 Three tools, signatures in `docs/04-mcp-surface.md`:
 
-- `list_ready_work({ limit, area, exclude_claimed })` — unblocked issues ranked by blast radius, each with `unblocks`, `conflict_risk` and a `reason`
+- `list_ready_work({ limit, area, exclude_claimed })` — unblocked issues ranked by blast radius, each with `unblocks` and a `reason`
 - `get_issue_context({ number })` — blockers with state, dependents with *what they need from you*, recommended base ref, likely files
 - `explain_dependency({ blocked, blocked_by })` — type, confidence, source, rationale, evidence, which run first saw it, and whether it is blocking
 
@@ -22,7 +22,7 @@ This is the amortisation argument made concrete: instead of every agent run re-d
 
 **Scope**
 
-- `app/api/mcp/[transport]/route.ts`, `src/lib/mcp/tools/**`
+- `apps/backend/src/mcp/tools/**`
 
 **Done when**
 

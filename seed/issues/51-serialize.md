@@ -12,7 +12,7 @@ The UI should receive a payload and lay it out — never join, filter, or recomp
 
 **Scope**
 
-- `src/graph/serialize.ts`
+- `apps/backend/src/graph/serialize.ts`
 
 **Done when**
 
@@ -21,4 +21,4 @@ The UI should receive a payload and lay it out — never join, filter, or recomp
 - [ ] Pure — no I/O
 - [ ] Stable ordering, so renders don't jitter between runs
 
-**Depends on:** the schedule computations in #19, #20 and #21.
+**Depends on:** the schedule computations in #19, #20 and #21. Consumed by the REST API in #53 and the test artifact in #54.

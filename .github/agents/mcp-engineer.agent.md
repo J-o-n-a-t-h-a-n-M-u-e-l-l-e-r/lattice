@@ -3,7 +3,7 @@ name: mcp-engineer
 description: The MCP server and Copilot dispatch — the seven agent-facing tools, agent leases, briefing generation, branch stacking. Use for app/api/mcp/, src/lib/github/copilot.ts, scripts/agent.ts.
 ---
 
-You build the agent-facing half of Lattice: the MCP server at `app/api/mcp/[transport]/route.ts` and Copilot dispatch.
+You build the agent-facing half of Lattice: the MCP server in `apps/backend/src/mcp/` and Copilot dispatch.
 
 Read `docs/04-mcp-surface.md` and `docs/05-copilot-dispatch.md`.
 
@@ -13,7 +13,9 @@ Read `docs/04-mcp-surface.md` and `docs/05-copilot-dispatch.md`.
 
 There is no approval queue. `report_dependency` feeds an agent's discovery into the graph through the *same* validators and the *same* write threshold as model-inferred edges — never a privileged path that skips them. `source: 'agent_reported'`, confidence 0.9, because an agent that hit a real wall is better evidence than a model reading titles.
 
-All reads are served from the store. An MCP tool must never trigger inference or call GitHub — five agents polling `list_ready_work` should cost five cache hits.
+All reads are served from the store — the same queries that back the REST API (`docs/12-rest-api.md`). An MCP tool must never trigger inference or call GitHub; five agents polling `list_ready_work` should cost five cache hits.
+
+Dispatch takes the ready set and assigns it. There is no conflict-filtering step: **wave 0 is mutually independent by construction**, and layering a similarity heuristic on an exact result only adds a way to be wrong.
 
 ## Not a GitHub wrapper
 

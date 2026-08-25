@@ -1,4 +1,4 @@
-# [I] Candidate pair generation and clustering
+# [I] Candidate pair generation and clustering (optional)
 <!-- labels: lane:inference,size:L -->
 **What**
 
@@ -7,6 +7,8 @@ Build the candidate set from the union of: bare cross-reference pairs, same-mile
 Then build the undirected candidate graph weighted by how many signals fired, partition it with greedy modularity or connected components, and split any component larger than 14 issues.
 
 Two refinements that matter: each issue joins its **top 2** clusters, so cluster boundaries get double coverage; and a final **representatives cluster** takes the 2 highest-degree issues from each cluster (capped at 14) to catch genuine cross-cluster edges.
+
+> **Optional — stretch work.** Off by default; only build this if the single-call path measurably underperforms on the gold set.
 
 **⚠️ Scope change since this was written:** we now use `stealth/ox-alpha` with a **1M-token context**, so clustering is no longer needed for *capacity* at our scale — 45 issues is roughly 30k tokens. It is still needed for *precision*, because a model asked about 45 issues at once attends worse than one asked about 12.
 
@@ -32,4 +34,4 @@ Note that **requests, not dollars, are the scarce resource**: the model is free,
 - [ ] The representatives cluster exists and is capped
 - [ ] Call count is reported
 
-**Depends on:** the symbol index in #11 for overlap-based candidates, and ingested issues from #5.
+**Depends on:** the symbol index in #11 for overlap-based candidates, and ingested issues from #5. Nothing depends on this.

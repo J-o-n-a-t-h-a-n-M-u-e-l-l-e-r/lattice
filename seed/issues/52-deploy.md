@@ -2,7 +2,12 @@
 <!-- labels: lane:demo,size:M -->
 **What**
 
-Deploy to Vercel with a hosted Postgres (Neon). Wire `OPENROUTER_API_KEY`, the GitHub token, `COPILOT_MCP_LATTICE_TOKEN`, and the database URL. Point the GitHub webhook at the deployed `/api/webhook`. Register the MCP server in repo Settings → Copilot → MCP servers with the deployed URL.
+**Two deploys**, because they are two services:
+
+- **Backend** — pipeline, store, REST API, MCP. Needs `DATABASE_URL` (Neon), `OPENROUTER_API_KEY`, the GitHub token, `LATTICE_API_TOKEN`, `COPILOT_MCP_LATTICE_TOKEN`.
+- **Web** — Next.js graph UI. Needs exactly two variables: the backend's URL and `LATTICE_API_TOKEN`. No database, no GitHub token, no model key.
+
+Then point the GitHub webhook at the backend's `/api/webhook`, and register the MCP server in repo Settings → Copilot → MCP servers with the backend URL.
 
 **Why it matters**
 
@@ -20,10 +25,12 @@ Do this **early**, not on the last afternoon. A first deploy always surfaces som
 
 **Done when**
 
-- [ ] The app is reachable at a public URL and renders a real graph
+- [ ] Web is reachable at a public URL and renders a real graph from the backend
+- [ ] The web deploy holds no database or GitHub credentials
+- [ ] CORS lets web reach the backend, and nothing else does
 - [ ] `DEMO_MODE=1` also works locally from a clean clone with no credentials
 - [ ] The webhook fires a run on a real issue event
 - [ ] Copilot can reach `/api/mcp` and list tools
 - [ ] The URL is in the README and ready for the submission
 
-**Depends on:** the store in #3, the graph view in #25, and the MCP route in #30.
+**Depends on:** the REST API in #53, the graph view in #25, and the MCP route in #30.

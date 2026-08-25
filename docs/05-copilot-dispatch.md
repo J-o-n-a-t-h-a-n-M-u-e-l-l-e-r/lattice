@@ -5,12 +5,9 @@
 `/api/dispatch` takes a wave and:
 
 1. **Find the bot.** GraphQL `suggestedActors(capabilities: [CAN_BE_ASSIGNED], first: 100)` → look for login `copilot-swe-agent`. Cache the bot ID in `.lattice/raw.json` — it's stable, and the demo should never fail on a lookup.
-2. **Select a conflict-free set.** Take wave-0 issues ranked by blast radius. Add the top issue; add each next one only if its `conflict_risk` against every already-selected issue is `< 0.4`.
+2. **Take the ready set.** Wave-0 issues ranked by blast radius, up to the requested count.
 
-   **Show the deferrals in the UI:**
-   > *Deferred #14 — 0.62 file overlap with #12 (`src/graph/schedule.ts`)*
-
-   That line is worth thirty seconds of demo on its own, because it's a problem that **only exists when your teammates are agents**. Two humans would have talked to each other.
+   No extra safety heuristic is needed here. **The graph already is the answer** — issues in wave 0 are, by construction, mutually independent and have no unmet blockers. That determinism is the product; layering a fuzzy similarity score on top of it would only add a way to be wrong.
 3. **Assign** each selected issue via `replaceActorsForAssignable`.
 
 ---
@@ -57,9 +54,10 @@ CONTEXT FROM THE GRAPH
   without saying so in the PR body.
 - It is on the critical path. Prefer a correct minimal change over a broad refactor.
 
-PARALLEL WORK — CONFLICT AVOIDANCE
-- Another agent is working #17 in `src/lib/github/`. Do not modify files there.
+SCOPE
 - Your expected surface is: src/graph/scc.ts, src/graph/acyclic.ts.
+- Other issues in this wave are independent of yours by construction. Stay in
+  the scope above and you will not collide with them.
 
 WHEN YOU ARE DONE
 - Call the `lattice` MCP server tool `report_progress` with

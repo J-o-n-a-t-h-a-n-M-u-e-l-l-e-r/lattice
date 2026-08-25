@@ -23,7 +23,7 @@ The graph is the *only* place the dependency information exists — Lattice neve
 
 **Scope**
 
-- `app/page.tsx`, `app/components/graph/**`
+- `apps/web/app/page.tsx`, `apps/web/app/components/graph/**`, `apps/web/lib/api.ts`
 
 **Done when**
 
@@ -36,4 +36,4 @@ The graph is the *only* place the dependency information exists — Lattice neve
 - [ ] Renders the committed fixture with no database running
 - [ ] Readable at 45 nodes without panning, and usable at 200
 
-**Depends on:** the app shell in #24, the fixture in #4, and the serialised payload from #51.
+**Depends on:** the app shell in #24 and the REST contract in #53. Code against the contract and a fixture from hour one — the web app is a separate service and must never wait for the backend to be up.

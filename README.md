@@ -32,19 +32,18 @@ So: **the schema exists, the data doesn't, and the view doesn't.**
   GitHub (read only)
   issues · blocked_by · sub-issues
              │
-             ▼                    triggered by issue events / schedule
-        inference ──► edges (type · confidence · verbatim evidence)
-                          │
-                 validate · score · make acyclic
-                          │
-                          ▼
-                     the store  ◄── the full graph lives here
-                          │
-          ┌───────────────┴───────────────┐
-          ▼                               ▼
-    graph view                      MCP server
-    (human: what's next)      (agent: what's next,
-                               what's parallel, claim)
+             ▼
+  ┌──────────────────────────────────────┐
+  │  BACKEND                             │
+  │   inference ──► the full graph       │
+  │                      │               │
+  │        REST API ◄────┴────► MCP      │
+  └──────────┬─────────────────┬─────────┘
+             │ REST            │ MCP
+             ▼                 ▼
+     interactive graph    coding agents
+     (human: what's next)  (agent: what's next,
+                            what's parallel, claim)
 ```
 
 The one architectural commitment: **GitHub is a data source, not a data store.** Lattice reads issues, native `blocked_by` and sub-issue hierarchy every run, and writes nothing back — no dependencies, no comments, no labels.
@@ -83,6 +82,7 @@ So Lattice maintains the ordering by itself, continuously, and both kinds of tea
 | [`docs/09-github-api-notes.md`](docs/09-github-api-notes.md) | Verified endpoints, headers, and the gotchas that will bite |
 | [`docs/10-model-provider.md`](docs/10-model-provider.md) | OpenRouter + Ox Alpha: setup, schema caveat, rate limits, privacy |
 | [`docs/11-graph-store.md`](docs/11-graph-store.md) | Where the graph is persisted, and the three cache layers |
+| [`docs/12-rest-api.md`](docs/12-rest-api.md) | The REST contract the web app consumes |
 | [`AGENTS.md`](AGENTS.md) | How agents should work in this repo |
 
 ## Quickstart

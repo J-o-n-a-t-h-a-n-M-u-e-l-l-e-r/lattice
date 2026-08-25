@@ -21,6 +21,6 @@ It's also what makes the whole system feel alive on screen: a node turns green, 
 - [ ] Each status transitions state correctly and releases leases where appropriate
 - [ ] `newly_ready` is computed correctly after a completion
 - [ ] The UI reflects the change on its next read
-- [ ] `blocked` prompts the agent toward `propose_dependency`
+- [ ] `blocked` prompts the agent toward `report_dependency`
 
 **Depends on:** leases in #32, and the wave recomputation in #19.

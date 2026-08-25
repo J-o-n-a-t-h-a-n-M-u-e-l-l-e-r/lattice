@@ -14,14 +14,18 @@ Lattice reads a repo's issues, infers the dependency graph between them, stores 
 | graph algorithms | [`docs/03-graph-scheduling.md`](../docs/03-graph-scheduling.md) |
 | MCP tools | [`docs/04-mcp-surface.md`](../docs/04-mcp-surface.md) |
 | the store / caching | [`docs/11-graph-store.md`](../docs/11-graph-store.md) |
+| the REST API | [`docs/12-rest-api.md`](../docs/12-rest-api.md) |
 | Copilot dispatch | [`docs/05-copilot-dispatch.md`](../docs/05-copilot-dispatch.md) |
 
-## The four rules that matter most
+## The rules that matter most
 
 1. **Never write to GitHub.** Reads only — no dependency writes, comments, labels or issue edits. And never bypass `validate.ts`: there is no human review downstream, so those guards are the only check on what enters the graph.
 2. **Never weaken the DAG invariant** in `src/graph/acyclic.ts` to make something pass.
 3. **Never drop the `evidence` field** or stop validating it against source text — an edge whose evidence can't be checked is an edge nobody can audit after the fact.
-4. **Stay inside the `Scope` list in your issue body.** Five people and several agents work this repo concurrently.
+4. **Respect the service boundary.** `apps/web` consumes the REST API only — never the store, Octokit, or a model client. Extend the API instead of reaching around it.
+5. **Stay inside the `Scope` list in your issue body.** Five people and several agents work this repo concurrently.
+
+Build and test from the root: `npm run build`, `npm test`. Neither needs credentials.
 
 ## If the Lattice MCP server is available to you
 

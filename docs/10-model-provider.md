@@ -93,8 +93,8 @@ Rate limiting returns **HTTP 429**.
 Three things in the code:
 
 1. **Concurrency 5** stays safely under 20/min.
-2. **Cache responses to disk, keyed by a hash of (model, system prompt, cluster content).** During prompt iteration you re-run constantly against unchanged clusters; without a cache you burn quota re-deriving identical answers. This is also what makes `--cached` runs instant during the demo.
-3. **Handle 429 explicitly** with a clear message — *"OpenRouter daily quota exhausted; run with `--no-llm` or `DEMO_MODE=1`"* — rather than a stack trace. A judge hitting this should still see the app.
+2. **Cache responses to disk, keyed by a hash of (model, system prompt, cluster content).** During prompt iteration you re-run constantly against unchanged clusters; without a cache you burn quota re-deriving identical answers. This is also what makes repeat runs instant during the demo.
+3. **Handle 429 explicitly** with a clear message — *"OpenRouter daily quota exhausted; the last completed run is still available, or set `DEMO_MODE=1`"* — rather than a stack trace. A judge hitting this should still see the app.
 
 ---
 
@@ -135,7 +135,7 @@ export const client = new OpenAI({
 
 Those two headers are optional but get the project listed on OpenRouter's leaderboards — free visibility, and a nice detail to mention.
 
-**Only `src/lib/infer/llm.ts` imports this client.** Model ID and base URL come from env, never hardcoded at a call site.
+**Only `apps/backend/src/infer/llm.ts` imports this client.** Model ID and base URL come from env, never hardcoded at a call site. The web app never talks to a model.
 
 ---
 

@@ -2,7 +2,7 @@
 <!-- labels: lane:mcp,size:M -->
 **What**
 
-Generate the per-assignment `customInstructions` string from the graph: what this issue blocks and its blast radius, which exported names dependents rely on, whether it's on the critical path, which files other agents currently hold, the expected file surface, and the instruction to call `report_progress` and `propose_dependency` rather than working around a blocker.
+Generate the per-assignment `customInstructions` string from the graph: what this issue blocks and its blast radius, which exported names dependents rely on, whether it's on the critical path, the expected file surface, and the instruction to call `report_progress` and `report_dependency` rather than working around a blocker.
 
 Template is in `docs/05-copilot-dispatch.md#custominstructions--the-biggest-lever`.
 
@@ -19,8 +19,8 @@ The single highest-value line is naming the exported types that dependents consu
 **Done when**
 
 - [ ] Briefing names dependents, blast radius, and critical-path status
-- [ ] It names files held by other in-flight agents
+- [ ] It states the expected file surface for this issue
 - [ ] It instructs the agent to use the MCP tools rather than improvising
 - [ ] It is visible in the dispatch dry-run output
 
-**Depends on:** the dispatch path in #37, blast radius from #21, and live lease state from #32.
+**Depends on:** the dispatch path in #37 and blast radius from #21.

@@ -1,29 +1,27 @@
-# [I] Path and symbol inverted index
+# [I] Path and symbol inverted index (optional)
 <!-- labels: lane:inference,size:M -->
+> **Optional — stretch work.** Only needed if you enable the clustered inference path (#12), which is **off by default**: Ox Alpha's 1M context means the whole backlog fits in a single call. Don't start here.
+
 **What**
 
-Extract file paths (`src/foo/bar.ts`, `packages/x`) and backticked identifiers containing `/` or `.` from every issue's title and body. Build an IDF-weighted inverted index over them.
-
-Expose two things: candidate pairs where issues share a rare token (overlap > 0.25), and an `overlap(a, b)` function returning the IDF-weighted Jaccard similarity.
+Extract file paths (`src/foo/bar.ts`, `packages/x`) and backticked identifiers containing `/` or `.` from every issue's title and body. Build an IDF-weighted inverted index over them, and expose candidate pairs where two issues share a rare token.
 
 **Why it matters**
 
-This module earns its keep twice, which is why it's worth building properly:
+Purely candidate generation for clustering: two issues that both name `src/graph/schedule.ts` are worth putting in the same cluster even if neither mentions the other.
 
-1. **Candidate generation.** Two issues that both name `src/graph/schedule.ts` are worth asking the model about, even if neither mentions the other.
-2. **Agent conflict risk.** The same similarity score tells the dispatcher which ready issues would collide if handed to two agents simultaneously. That's a problem that only exists when your teammates are agents — two humans would have talked to each other — and it's a strong demo beat.
+> **Scope reduced.** This originally justified itself twice — candidate generation *and* an agent conflict-risk score. The conflict-risk half was dropped (#23): the graph already tells us deterministically what can run in parallel, and a fuzzy similarity score on top of an exact answer only adds a way to be wrong.
 
-IDF weighting is what stops `src/` and `.ts` from dominating; rare tokens carry the signal.
+IDF weighting is what stops `src/` and `.ts` dominating; rare tokens carry the signal.
 
 **Scope**
 
-- `src/lib/infer/candidates.ts`
+- `apps/backend/src/infer/candidates.ts`
 
 **Done when**
 
-- [ ] Paths and backticked symbols are extracted from title and body
+- [ ] Paths and backticked symbols extracted from title and body
 - [ ] IDF weighting demonstrably down-weights common tokens
-- [ ] `overlap(a, b)` is exported for reuse by the dispatch layer
 - [ ] Pure — no I/O
 
-**Depends on:** ingested issues from #5.
+**Depends on:** ingested issues from #5. Nothing depends on this unless clustering is enabled.

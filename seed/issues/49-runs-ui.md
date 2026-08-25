@@ -20,7 +20,7 @@ Below-threshold makes the two-tier write policy visible, which is otherwise invi
 
 **Scope**
 
-- `app/runs/page.tsx`, `app/runs/[id]/page.tsx`, components
+- `apps/web/app/runs/page.tsx`, `apps/web/app/runs/[id]/page.tsx`
 
 **Done when**
 
@@ -30,4 +30,4 @@ Below-threshold makes the two-tier write policy visible, which is otherwise invi
 - [ ] Below-threshold edges are listed with their scores
 - [ ] Renders from the fixture with no database
 
-**Depends on:** the app shell in #24, the store in #3, and the fixture in #4.
+**Depends on:** the app shell in #24 and the `/api/runs` endpoints in #53.
