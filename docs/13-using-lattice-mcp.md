@@ -79,7 +79,7 @@ you do.
 Ask Copilot for one of these actions:
 
 ```text
-Use Lattice to find work I can start now.
+Use Lattice to find work I can start now in repo "owner/repository".
 ```
 
 ```text
@@ -117,6 +117,6 @@ schedule. It never closes or edits the GitHub issue.
 |---|---|
 | Copilot cannot connect | Verify the URL ends in `/mcp`, is reachable from the App, and uses HTTPS outside local development. |
 | `unauthorized` | The `Authorization` header must be `Bearer <LATTICE_MCP_TOKEN>`, matching the Lattice server's environment. |
-| `not_analysed` | Run an analysis for the requested `owner/repo` before asking for ready work. |
+| `not_analysed` | The tool has no stored graph for that `owner/repo`; run an analysis first, then call the tool with the explicit `repo` argument. |
 | No work is available | All ready issues may be leased; retry later or call `list_ready_work` with `exclude_claimed: false`. |
 | The tools are missing | Check the Copilot App's MCP Servers settings and confirm the `lattice` server is enabled. |

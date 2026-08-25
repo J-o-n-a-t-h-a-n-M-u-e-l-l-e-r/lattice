@@ -14,7 +14,14 @@ import { computeSchedule } from '../graph/schedule.js';
 
 export async function listReadyWork(repo: string, limit = 5, excludeClaimed = true) {
   const payload = await buildGraphPayload(repo);
-  if (!payload) return { error: 'not_analysed', items: [] };
+  if (!payload) {
+    return {
+      error: 'not_analysed',
+      repo,
+      detail: `Lattice has no completed analysis for ${repo}. Run an analysis first, then retry with repo "${repo}".`,
+      items: [],
+    };
+  }
 
   const leases = excludeClaimed ? await store.activeLeases(repo) : [];
   const claimed = new Set(leases.map((l) => Number(l.number)));
