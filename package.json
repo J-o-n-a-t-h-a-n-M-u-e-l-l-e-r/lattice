@@ -20,6 +20,7 @@
     "start": "concurrently -n backend,web -c blue,magenta \"npm start -w @lattice/backend\" \"npm start -w @lattice/web\""
   },
   "devDependencies": {
+    "@esbuild/darwin-arm64": "^0.28.2",
     "concurrently": "^9.1.0",
     "typescript": "^5.7.2"
   }
