@@ -145,6 +145,73 @@ curl -X POST localhost:3001/mcp \
   -d '{"jsonrpc":"2.0","id":1,"method":"tools/list"}'
 ```
 
+## Using the MCP server
+
+The backend serves MCP over Streamable HTTP at `/mcp`, alongside the REST API.
+Start the backend and it is live — no separate process.
+
+```bash
+npm run build && npm start -w @lattice/backend    # :3001, MCP at /mcp
+```
+
+### Claude Code
+
+```bash
+claude mcp add --scope local --transport http lattice http://localhost:3001/mcp
+claude mcp list          # lattice: ... - ✔ Connected
+```
+
+A committed `.mcp.json` in this repo does the same thing for anyone who clones
+it, so `claude` picks the server up automatically.
+
+### Copilot coding agent
+
+Copilot's cloud agent needs a public URL, so deploy the backend first (issue
+#52). Full walkthrough, including how to point a *different* repository at a
+Lattice instance: [`docs/13-using-lattice-mcp.md`](docs/13-using-lattice-mcp.md).
+
+Auth is skipped entirely when `COPILOT_MCP_LATTICE_TOKEN` is unset, which is
+what makes local use zero-config; set it before exposing the backend.
+
+### Any other client
+
+```bash
+npx @modelcontextprotocol/inspector    # then connect to http://localhost:3001/mcp
+```
+
+### The two directions
+
+**Top-down — "what should I work on?"**
+
+```
+list_ready_work        issues nothing is blocking, ranked by how much they unblock
+claim_next_issue       take one atomically, with a briefing; two agents never collide
+report_progress        returns what your work just unblocked
+```
+
+**Bottom-up — "I want to ship #6, what has to exist first?"**
+
+```
+plan_for_issue         the whole prerequisite chain, in build order
+get_issue_context      blockers, dependents, and what they need from you
+explain_dependency     why an edge exists, with the quote it was inferred from
+report_dependency      a blocker you discovered; enters the graph for everyone
+```
+
+Point an agent at a target and it gets the ordered plan:
+
+```
+plan_for_issue(6)
+  2 issue(s) must land before #6, in 2 step(s).
+  step 1: #3  Put Adyen behind a PaymentProvider interface
+  step 2: #4  Checkout session endpoint returns a provider-agnostic session
+  then    #6  Native checkout in the app
+```
+
+Everything inside a step is independent, so it can be done in any order or
+handed to several agents at once. The issue panel in the web app shows the same
+plan with a **Copy** button that hands it to an agent as a prompt.
+
 ### The machine-readable graph
 
 `npm test` writes `artifacts/graph.json` and `artifacts/schedule.json`. That
