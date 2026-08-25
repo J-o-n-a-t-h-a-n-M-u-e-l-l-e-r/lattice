@@ -72,16 +72,24 @@ export async function runPipeline(opts: RunOptions): Promise<RunResult> {
   const runId = opts.existingRunId
     ?? await store.startRun(repo, opts.trigger ?? 'manual', MODEL, clusterSize);
 
+  // Report the phase we are actually in. Anything time-based here would be a
+  // guess dressed up as information.
+  const phase = (id: string, detail: string, extra: Record<string, unknown> = {}) => {
+    log(detail);
+    return store.setRunPhase(runId, id, detail, extra).catch(() => {});
+  };
+
   try {
     // ---- L0 ingest -------------------------------------------------------
+    await phase('ingest', `Reading issues from ${repo}`);
     let issues = opts.cached ? await store.getIssues(repo) : [];
     if (issues.length === 0) {
-      log(`fetching issues from ${repo}...`);
       issues = await fetchIssues(owner, name);
       await store.saveIssues(repo, issues);
     }
     const open = issues.filter((i) => i.state === 'open');
-    log(`${issues.length} issues (${open.length} open)`);
+    await phase('ingest', `Read ${issues.length} issues (${open.length} open)`,
+      { issues: issues.length, open: open.length });
 
     // A guard, not a limit we are proud of. The whole backlog goes to the model
     // in one request, so a repo with a thousand open issues would blow the
@@ -95,6 +103,7 @@ export async function runPipeline(opts: RunOptions): Promise<RunResult> {
     }
 
     // ---- L1 given edges: API-sourced, no text parsing --------------------
+    await phase('given', 'Collecting dependencies already recorded in GitHub');
     let given: Edge[] = [];
     if (!opts.cached) {
       given = [
@@ -102,7 +111,11 @@ export async function runPipeline(opts: RunOptions): Promise<RunResult> {
         ...(await fetchSubIssueEdges(owner, name)),
       ];
     }
-    log(`${given.length} given edges (native blocked_by + sub-issue hierarchy)`);
+    await phase('given',
+      given.length
+        ? `Found ${given.length} existing dependencies`
+        : 'No dependencies recorded in GitHub yet - inferring from scratch',
+      { given: given.length });
 
     // ---- L2/L3 inference -------------------------------------------------
     const existing = await store.getEdges(repo);
@@ -111,7 +124,6 @@ export async function runPipeline(opts: RunOptions): Promise<RunResult> {
     const pinned = existing.filter((e) => e.pinned);
 
     const clusters = clusterIssues(open, clusterSize);
-    log(`${clusters.length} cluster(s), model ${MODEL}`);
 
     let requests = 0;
     let cacheHits = 0;
@@ -126,30 +138,48 @@ export async function runPipeline(opts: RunOptions): Promise<RunResult> {
         .filter((g) => cluster.some((c) => c.number === g.blocked))
         .map((g) => [g.blocked, g.blockedBy] as [number, number]);
 
-      const outcome = await extractEdges(cluster, ctx);
+      const many = clusters.length > 1;
+      const where = many ? ` (batch ${i + 1} of ${clusters.length})` : '';
+      await phase('infer', `Reading ${cluster.length} issues with ${MODEL}${where}`,
+        { cluster: i + 1, clusters: clusters.length, found: 0 });
+
+      const outcome = await extractEdges(cluster, ctx, (sp) => {
+        // Streamed from inside the model call, so the longest phase of the run
+        // has something true to show rather than a spinner.
+        void phase('infer',
+          sp.edges > 0
+            ? `Found ${sp.edges} candidate ${sp.edges === 1 ? 'dependency' : 'dependencies'}${where}`
+            : `Thinking about ${cluster.length} issues${where}`,
+          { cluster: i + 1, clusters: clusters.length, found: sp.edges, chars: sp.chars });
+      });
+
       requests += outcome.requests;
       if (outcome.cacheHit) cacheHits++;
 
       if (!outcome.result) {
         failedClusters++;
-        log(`  cluster ${i + 1}/${clusters.length}: FAILED (${outcome.error ?? 'unknown'})`);
+        log(`  batch ${i + 1}/${clusters.length}: FAILED (${outcome.error ?? 'unknown'})`);
         continue;
       }
 
       proposed += outcome.result.edges.length;
+      await phase('validate',
+        `Checking evidence for ${outcome.result.edges.length} candidates`,
+        { proposed });
       const { kept, rejected } = validateEdges(outcome.result.edges, cluster, given, suppressed);
       inferred.push(kept);
       rejections.push(...rejected);
       for (const est of outcome.result.estimates) estimates.set(est.issue, est.effort_days);
-      log(`  cluster ${i + 1}/${clusters.length}: ${outcome.result.edges.length} proposed, ` +
-          `${kept.length} kept, ${rejected.length} rejected${outcome.cacheHit ? ' (cached)' : ''}`);
+      await phase('validate',
+        `${kept.length} kept, ${rejected.length} rejected${outcome.cacheHit ? ' (cached)' : ''}`,
+        { proposed, kept: kept.length, rejected: rejected.length });
     }
 
     if (estimates.size > 0) await store.setEffortEstimates(repo, estimates);
 
     // ---- L5 merge + threshold -------------------------------------------
     const merged = mergeEdges([given, pinned, ...inferred]);
-    log(`${merged.length} edges after merge (threshold ${BLOCK_THRESHOLD})`);
+    await phase('schedule', `Scoring ${merged.length} dependencies`, { merged: merged.length });
 
     // ---- L6 make acyclic (automatic; given edges are immutable) ----------
     const nodes = open.map((i) => i.number);
@@ -168,12 +198,14 @@ export async function runPipeline(opts: RunOptions): Promise<RunResult> {
       ...nonBlocking,
     ];
 
-    if (breaks.length > 0) {
-      log(`${breaks.length} cycle(s) broken` +
-          (excluded.length ? `, ${excluded.length} issue(s) excluded as unresolvable` : ''));
-    }
+    await phase('schedule',
+      breaks.length
+        ? `Broke ${breaks.length} dependency ${breaks.length === 1 ? 'cycle' : 'cycles'}`
+        : 'Computing waves and the critical path',
+      { cycles: breaks.length });
 
     // ---- L7 persist ------------------------------------------------------
+    await phase('persist', 'Saving the graph');
     await store.replaceGraph(repo, finalEdges, runId);
     await store.saveRejections(runId, repo, rejections);
     await store.saveCycleBreaks(runId, repo, breaks);
@@ -187,6 +219,7 @@ export async function runPipeline(opts: RunOptions): Promise<RunResult> {
     const edgesBlocking = finalEdges.filter((e) => e.blocking).length;
     const status = failedClusters > 0 ? 'partial' : 'ok';
 
+    await store.setRunPhase(runId, 'done', 'Finished').catch(() => {});
     await store.finishRun(runId, {
       status, requests, cacheHits,
       edgesProposed: proposed, edgesKept: finalEdges.length, edgesBlocking,

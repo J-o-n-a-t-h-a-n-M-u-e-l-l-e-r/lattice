@@ -137,13 +137,22 @@ export interface ExtractionOutcome {
   error?: string;
 }
 
+/** Live signal from inside the model call. */
+export interface StreamProgress {
+  chars: number;      // characters of tool arguments received so far
+  edges: number;      // complete edge objects seen so far
+  attempt: number;
+}
+
 /**
  * Ox Alpha does NOT enforce JSON schemas, so the forced tool call is a strong
  * hint and Zod is the real gate. safeParse, never parse; one retry with the
  * validation error fed back; then give up on this cluster rather than the run.
  */
 export async function extractEdges(
-  issues: Issue[], given: Array<[number, number]>,
+  issues: Issue[],
+  given: Array<[number, number]>,
+  onProgress?: (p: StreamProgress) => void,
 ): Promise<ExtractionOutcome> {
   const userContent = renderCluster(issues, given);
   const key = createHash('sha256')
@@ -168,7 +177,10 @@ export async function extractEdges(
     requests++;
     let raw: unknown;
     try {
-      const res = await openai.chat.completions.create({
+      // Streamed so the caller can report real progress. A single request for a
+      // whole backlog takes minutes; without this the UI has nothing honest to
+      // say for the longest phase of the run.
+      const stream = await openai.chat.completions.create({
         model: MODEL,
         messages,
         tools: [{
@@ -180,10 +192,29 @@ export async function extractEdges(
           },
         }],
         tool_choice: { type: 'function', function: { name: 'emit_edges' } },
+        stream: true,
       });
-      const call = res.choices[0]?.message?.tool_calls?.[0];
-      const args = call && 'function' in call ? call.function.arguments : undefined;
-      const text = args ?? res.choices[0]?.message?.content ?? '';
+
+      let buf = '';
+      let content = '';
+      let lastReport = 0;
+      for await (const chunk of stream) {
+        const delta = chunk.choices[0]?.delta as
+          | { content?: string | null; tool_calls?: Array<{ function?: { arguments?: string } }> }
+          | undefined;
+        for (const call of delta?.tool_calls ?? []) {
+          buf += call.function?.arguments ?? '';
+        }
+        if (delta?.content) content += delta.content;
+
+        const now = Date.now();
+        if (onProgress && now - lastReport > 700) {
+          lastReport = now;
+          onProgress({ chars: buf.length || content.length, edges: countEdges(buf), attempt: attempt + 1 });
+        }
+      }
+      const text = buf || content;
+      if (onProgress) onProgress({ chars: text.length, edges: countEdges(buf), attempt: attempt + 1 });
       raw = JSON.parse(stripFences(text));
     } catch (err) {
       lastError = err instanceof Error ? err.message : String(err);
@@ -209,6 +240,16 @@ export async function extractEdges(
 
   // One bad cluster must not fail the run - a partial graph beats no graph.
   return { result: null, requests, cacheHit: false, error: lastError };
+}
+
+/**
+ * How many complete edge objects have arrived. Counting closing braces that
+ * follow an evidence block is good enough for a progress number and costs
+ * nothing - we are not parsing, just watching it fill up.
+ */
+function countEdges(partial: string): number {
+  const m = partial.match(/"blockedBy"\s*:/g);
+  return m ? m.length : 0;
 }
 
 function stripFences(s: string): string {

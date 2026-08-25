@@ -47,6 +47,18 @@ export async function finishRun(
   );
 }
 
+/** Called as the pipeline advances, so the UI reports fact rather than a timer. */
+export async function setRunPhase(
+  id: string, phase: string, detail: string, progress: Record<string, unknown> = {},
+) {
+  const db = await getDb();
+  await db.query(
+    `UPDATE runs SET phase = $2, phase_detail = $3, phase_at = now(),
+       progress = progress || $4::jsonb
+     WHERE id = $1`,
+    [id, phase, detail, JSON.stringify(progress)]);
+}
+
 const toRun = (r: Record<string, any>): RunSummary => ({
   id: r.id, repo: r.repo, trigger: r.trigger,
   startedAt: new Date(r.started_at).toISOString(),
@@ -59,6 +71,9 @@ const toRun = (r: Record<string, any>): RunSummary => ({
   rejectionCounts: typeof r.rejection_counts === 'string'
     ? JSON.parse(r.rejection_counts) : (r.rejection_counts ?? {}),
   error: r.error ?? null,
+  phase: r.phase ?? null,
+  phaseDetail: r.phase_detail ?? null,
+  progress: typeof r.progress === 'string' ? JSON.parse(r.progress) : (r.progress ?? {}),
 });
 
 export async function listRuns(repo: string, limit = 20): Promise<RunSummary[]> {
