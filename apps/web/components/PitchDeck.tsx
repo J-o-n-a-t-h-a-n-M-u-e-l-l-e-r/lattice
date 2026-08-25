@@ -4,7 +4,7 @@ import { useEffect, useRef, useState, type CSSProperties } from 'react';
 import { Logo } from './Logo';
 import styles from './PitchDeck.module.css';
 
-const LAST_SLIDE = 4;
+const LAST_SLIDE = 2;
 
 type IssueCard = {
   number: number;
@@ -58,15 +58,6 @@ function Arrow({ direction }: { direction: 'left' | 'right' }) {
   );
 }
 
-function Mark() {
-  return (
-    <svg className={styles.mark} viewBox="0 0 20 20" aria-hidden="true">
-      <path d="M10 1.7 17.3 5.9v8.2L10 18.3l-7.3-4.2V5.9L10 1.7Z" />
-      <path d="M10 1.7v16.6M2.7 5.9l14.6 8.2M17.3 5.9 2.7 14.1" />
-    </svg>
-  );
-}
-
 function IssueOpenedIcon() {
   return (
     <svg viewBox="0 0 20 20" aria-hidden="true">
@@ -79,8 +70,6 @@ function IssueOpenedIcon() {
 export function PitchDeck() {
   const [slide, setSlide] = useState(0);
   const [graphStage, setGraphStage] = useState(0);
-  const [videoReady, setVideoReady] = useState(false);
-  const [videoMissing, setVideoMissing] = useState(false);
   const [blackout, setBlackout] = useState(false);
   const presenterChannel = useRef<BroadcastChannel | null>(null);
   const deckState = useRef({ slide, graphStage, blackout });
@@ -277,63 +266,6 @@ export function PitchDeck() {
       </section>
 
       <section className={`${styles.slide} ${slide === 2 ? styles.active : ''}`} aria-hidden={slide !== 2}>
-        <div className={styles.systemHeading}>
-          <p className={styles.kicker}>ONE PASS. A SHARED SCHEDULE.</p>
-          <h2>
-            Turn issue text into
-            <br />
-            <em>safe parallel work.</em>
-          </h2>
-          <p>
-            Lattice reads the backlog once, infers the graph, and gives every
-            teammate the same answer to “what should happen next?”
-          </p>
-        </div>
-
-        <div className={styles.systemMap}>
-          <div className={styles.systemRail} aria-hidden="true">
-            <span />
-            <span />
-            <span />
-          </div>
-          <article className={styles.systemStep}>
-            <div className={styles.stepNumber}>01</div>
-            <Mark />
-            <h3>Read, never write</h3>
-            <p>GitHub issues, native blockers, and sub-issues stay the source of truth.</p>
-            <span className={styles.stepFoot}>NO COMMENTS · NO LABELS · NO RISK</span>
-          </article>
-          <article className={styles.systemStep}>
-            <div className={styles.stepNumber}>02</div>
-            <Mark />
-            <h3>Infer, then prove</h3>
-            <p>Every suggested edge needs verbatim evidence. Invalid guesses are rejected.</p>
-            <span className={styles.stepFoot}>63 CANDIDATES → 40 VALIDATED</span>
-          </article>
-          <article className={styles.systemStep}>
-            <div className={styles.stepNumber}>03</div>
-            <Mark />
-            <h3>Schedule the team</h3>
-            <p>The graph becomes waves, a critical path, and MCP tools that agents can act on.</p>
-            <span className={styles.stepFoot}>GRAPH · REST · MCP</span>
-          </article>
-        </div>
-
-        <div className={styles.systemProof}>
-          <span>THE OUTCOME</span>
-          <p>
-            One expensive reasoning pass becomes the scheduler for every cheap
-            agent run after it.
-          </p>
-          <div>
-            <b>3</b><small>waves</small>
-            <b>16</b><small>blocking edges</small>
-            <b>0</b><small>GitHub writes</small>
-          </div>
-        </div>
-      </section>
-
-      <section className={`${styles.slide} ${slide === 3 ? styles.active : ''}`} aria-hidden={slide !== 3}>
         <div className={styles.archHeading}>
           <h2>The System Architecture</h2>
         </div>
@@ -439,56 +371,6 @@ export function PitchDeck() {
 
       </section>
 
-      <section className={`${styles.slide} ${slide === 4 ? styles.active : ''}`} aria-hidden={slide !== 4}>
-        <div className={styles.demoHeading}>
-          <p className={styles.kicker}>THE DEMO / 01:20</p>
-          <h2>Watch the plan<br />become executable.</h2>
-          <p>From a GitHub issue edit to an agent-ready work wave, without a human triaging every handoff.</p>
-        </div>
-        <div className={styles.videoFrame}>
-          <video
-            controls
-            playsInline
-            preload="metadata"
-            className={`${styles.demoVideo} ${videoReady ? styles.videoReady : ''}`}
-            onLoadedData={() => setVideoReady(true)}
-            onError={() => setVideoMissing(true)}
-          >
-            <source src="/pitch/lattice-demo.mp4" type="video/mp4" />
-          </video>
-          {!videoReady && (
-            <div className={styles.videoFallback}>
-              <div className={styles.videoFallbackGraph} aria-hidden="true">
-                <i /><i /><i /><i /><i /><i />
-              </div>
-              <Mark />
-              <strong>{videoMissing ? 'DEMO RECORDING READY HERE' : 'LOADING DEMO RECORDING'}</strong>
-              <span>
-                {videoMissing
-                  ? 'Add lattice-demo.mp4 to apps/web/public/pitch/'
-                  : 'Issue event → validated graph → agent dispatch'}
-              </span>
-            </div>
-          )}
-          <div className={styles.videoStamp}>
-            <span>LIVE PATH</span>
-            <b>ISSUE → GRAPH → AGENT</b>
-          </div>
-        </div>
-        <div className={styles.demoBeats}>
-          <span><b>00</b> Issue changes</span>
-          <span><b>20</b> Edges validated</span>
-          <span><b>45</b> Wave zero starts</span>
-          <span><b>75</b> Graph learns</span>
-        </div>
-        <p className={styles.demoClose}>
-          The graph is not a report. It is the coordination layer.
-        </p>
-      </section>
-
-      <footer className={styles.pitchFooter}>
-        Alba · Albert · Jonathan · Nicolas · Tong&nbsp;&nbsp;—&nbsp;&nbsp;Microsoft Summer Mini-Hackathon 2026
-      </footer>
       <output className={styles.slideNumber} aria-label={`Slide ${slide + 1}`}>
         {String(slide + 1).padStart(2, '0')}
       </output>
