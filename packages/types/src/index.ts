@@ -111,7 +111,21 @@ export const RunSummary = z.object({
   edgesBlocking: z.number().int(),
   rejectionCounts: z.record(z.number().int()),
   error: z.string().nullable().default(null),
+  /** What the pipeline is doing right now. Null once finished. */
+  phase: z.string().nullable().default(null),
+  phaseDetail: z.string().nullable().default(null),
+  progress: z.record(z.unknown()).default({}),
 });
+
+/** The pipeline's phases, in order. The UI renders these as a checklist. */
+export const RUN_PHASES = [
+  { id: 'ingest',    label: 'Reading issues from GitHub' },
+  { id: 'given',     label: 'Collecting existing dependencies' },
+  { id: 'infer',     label: 'Inferring the dependency graph' },
+  { id: 'validate',  label: 'Validating evidence' },
+  { id: 'schedule',  label: 'Breaking cycles and scheduling' },
+  { id: 'persist',   label: 'Saving the graph' },
+] as const;
 export type RunSummary = z.infer<typeof RunSummary>;
 
 /* ─────────────────────────── derived schedule + API ───────────────────────── */

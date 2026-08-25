@@ -97,10 +97,6 @@ npm run dev -w @lattice/web                          # :3000
 Open **http://localhost:3000**, paste any public GitHub repo URL, and it
 analyses it. Repos you have already analysed are listed on the same page.
 
-> **Don't run `npm run build` while `next dev` is running** — the build
-> overwrites `.next` underneath the dev server and every route 500s with
-> `MODULE_NOT_FOUND`. Stop dev first, or `rm -rf apps/web/.next` and restart it.
->
 > `npm run dev` (both services with hot reload) uses `tsx`. If it fails with
 > `The package "@esbuild/darwin-arm64" could not be found`, npm has dropped an
 > optional binary — `rm -rf node_modules package-lock.json && npm install
@@ -129,6 +125,14 @@ hash, which is also what protects the 50-request/day free-tier quota.
 | `npm run dev -w @lattice/web` | Web app on :3000 |
 
 Set `DATABASE_URL` to use hosted Postgres (Neon) instead of the embedded one.
+
+### Stop the backend with Ctrl-C, not `kill -9`
+
+PGlite writes to a real Postgres data directory. A hard kill mid-write corrupts
+it and the store is gone. The server closes the database on SIGINT/SIGTERM, so
+Ctrl-C is safe. If it does get corrupted, `npm run import -w @lattice/backend`
+restores the last graph from `artifacts/graph.json` — no model request, no
+GitHub token.
 
 ### Check it without a browser
 

@@ -41,7 +41,19 @@ export async function getDb(): Promise<Db> {
     const memory = process.env.LATTICE_PGLITE_MEMORY === '1';
     if (!memory) mkdirSync(dir, { recursive: true });
     const lite = new PGlite(memory ? undefined : dir);
-    await lite.waitReady;
+    try {
+      await lite.waitReady;
+    } catch (err) {
+      // PGlite is single-writer. A second process on the same data directory
+      // aborts deep inside wasm and prints ~60KB of stack that says nothing
+      // about the actual problem, which is simply "the server already has it".
+      throw new Error(
+        `Could not open the local database at ${dir}.\n` +
+        `PGlite allows one process at a time, and the backend server is probably ` +
+        `already running - stop it, or set DATABASE_URL to use a shared Postgres.\n` +
+        `Original: ${err instanceof Error ? err.message : String(err)}`,
+        { cause: err });
+    }
     singleton = {
       kind: 'pglite',
       async query<T>(sql: string, params: unknown[] = []) {
@@ -176,5 +188,14 @@ async function migrate(db: Db): Promise<void> {
       note       TEXT,
       PRIMARY KEY (repo, number)
     );
+  `);
+
+  // Progress reporting, added after the fact. Separate and idempotent so an
+  // existing database picks it up without a migration tool.
+  await db.exec(`
+    ALTER TABLE runs ADD COLUMN IF NOT EXISTS phase        TEXT;
+    ALTER TABLE runs ADD COLUMN IF NOT EXISTS phase_detail TEXT;
+    ALTER TABLE runs ADD COLUMN IF NOT EXISTS phase_at     TIMESTAMPTZ;
+    ALTER TABLE runs ADD COLUMN IF NOT EXISTS progress     JSONB NOT NULL DEFAULT '{}';
   `);
 }

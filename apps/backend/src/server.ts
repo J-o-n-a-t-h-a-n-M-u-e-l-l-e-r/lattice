@@ -48,4 +48,23 @@ server.listen(PORT, () => {
   console.log(`[lattice]   MCP   /mcp`);
 });
 
-process.on('SIGINT', () => { server.close(); process.exit(0); });
+/**
+ * Close the database before exiting. PGlite writes to a real Postgres data
+ * directory, and a hard kill mid-write corrupts it - which is exactly how the
+ * store was lost once already. SIGKILL still cannot be caught, so `npm run
+ * import` exists as the recovery path.
+ */
+let closing = false;
+for (const signal of ['SIGINT', 'SIGTERM'] as const) {
+  process.on(signal, async () => {
+    if (closing) return;
+    closing = true;
+    console.log(`\n[lattice] ${signal} - closing database...`);
+    server.close();
+    try {
+      const { getDb } = await import('./store/db.js');
+      await (await getDb()).close();
+    } catch { /* nothing to close */ }
+    process.exit(0);
+  });
+}

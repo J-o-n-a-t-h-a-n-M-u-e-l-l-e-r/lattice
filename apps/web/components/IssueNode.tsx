@@ -1,51 +1,75 @@
 'use client';
 import { Handle, Position, type NodeProps } from '@xyflow/react';
 import type { GraphNode } from '@lattice/types';
-import { NODE_H, NODE_W } from './graph-layout';
+import { IssueState } from './Octicon';
+import { cn } from '../lib/utils';
 
+export const NODE_W = 264;
+export const NODE_H = 86;
+
+/**
+ * Styled as a GitHub issue row: state octicon, title, then the metadata line.
+ * The familiarity is the point - it should read like something lifted out of
+ * the issues list, not a node in an abstract diagram.
+ */
 export function IssueNode({ data }: NodeProps) {
   const { node, onCritical, dim, selected } = data as {
     node: GraphNode; onCritical: boolean; dim: boolean; selected: boolean;
   };
 
-  const border = selected ? '#58a6ff' : onCritical ? '#f0883e' : '#2a3140';
-
   return (
     <div
-      className="rounded-xl border px-3 py-2.5 flex flex-col gap-1 transition-[opacity,border-color,box-shadow] duration-150"
-      style={{
-        width: NODE_W, height: NODE_H,
-        background: selected ? '#1a1f2b' : '#141821',
-        borderColor: border,
-        borderWidth: selected || onCritical ? 2 : 1,
-        opacity: dim ? 0.15 : 1,
-        boxShadow: selected ? '0 0 0 4px rgba(88,166,255,.15)' : 'none',
-      }}
+      className={cn(
+        'group flex gap-2 rounded-md border bg-card px-3 py-2.5 shadow-sm transition-all duration-150',
+        'hover:border-muted-foreground/40 hover:shadow-md',
+        selected && 'border-primary ring-2 ring-primary/25',
+        onCritical && !selected && 'border-[hsl(var(--critical))]/60',
+      )}
+      style={{ width: NODE_W, height: NODE_H, opacity: dim ? 0.25 : 1 }}
     >
-      <Handle type="target" position={Position.Top} style={{ opacity: 0, width: 1, height: 1 }} />
-      <div className="flex items-center gap-1.5">
-        <span className="w-1.5 h-1.5 rounded-full shrink-0"
-              style={{ background: node.ready ? '#3fb950' : '#4d5566' }}
-              title={node.ready ? 'ready' : `blocked (wave ${node.wave})`} />
-        <span className="font-mono text-[11px]" style={{ color: '#8b93a7' }}>#{node.number}</span>
-        {onCritical && (
-          <span className="text-[9px] font-medium uppercase tracking-wider"
-                style={{ color: '#f0883e' }}>critical</span>
-        )}
-        {node.blastRadius > 0 && (
-          <span className="ml-auto text-[10px] font-mono px-1.5 rounded shrink-0"
-                style={{ background: 'rgba(88,166,255,.14)', color: '#58a6ff' }}
-                title={`Unblocks ${node.blastRadius} issue(s)`}>
-            unblocks {node.blastRadius}
-          </span>
-        )}
+      <Handle type="target" position={Position.Top} className="!opacity-0 !h-1 !w-1" />
+
+      <IssueState state={node.state} className="mt-px shrink-0" />
+
+      <div className="min-w-0 flex-1">
+        <div className="line-clamp-2 text-[12.5px] font-semibold leading-[1.35] text-foreground">
+          {node.title}
+        </div>
+        <div className="mt-1 flex items-center gap-1.5 text-[11px] text-muted-foreground">
+          <span className="font-mono">#{node.number}</span>
+          {onCritical && (
+            <>
+              <span aria-hidden>·</span>
+              <span className="font-medium text-[hsl(var(--critical))]">critical path</span>
+            </>
+          )}
+          {node.blastRadius > 0 && (
+            <>
+              <span aria-hidden>·</span>
+              <span className="font-medium text-primary">unblocks {node.blastRadius}</span>
+            </>
+          )}
+        </div>
       </div>
-      <div className="text-[12px] leading-[1.35] overflow-hidden"
-           style={{ color: '#e6e9ef', display: '-webkit-box', WebkitLineClamp: 2,
-                    WebkitBoxOrient: 'vertical' }}>
-        {node.title}
-      </div>
-      <Handle type="source" position={Position.Bottom} style={{ opacity: 0, width: 1, height: 1 }} />
+
+      <Handle type="source" position={Position.Bottom} className="!opacity-0 !h-1 !w-1" />
+    </div>
+  );
+}
+
+/** Row label for a wave. A node so it pans and zooms with the graph. */
+export function WaveLabel({ data }: NodeProps) {
+  const { wave, count } = data as { wave: number; count: number };
+  return (
+    <div className="pointer-events-none flex select-none items-baseline gap-2 whitespace-nowrap">
+      <span className={cn('text-[13px] font-semibold tracking-tight',
+                          wave === 0 ? 'text-[hsl(var(--ready))]' : 'text-foreground')}>
+        {wave === 0 ? 'Ready now' : `Wave ${wave}`}
+      </span>
+      <span className="text-[11.5px] text-muted-foreground">
+        {count} {count === 1 ? 'issue' : 'issues'}
+        {wave > 0 && ` · after wave ${wave - 1}`}
+      </span>
     </div>
   );
 }

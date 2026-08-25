@@ -1,51 +1,53 @@
 'use client';
 import { useEffect, useState } from 'react';
+import { ArrowUpRight, ChevronDown, X } from 'lucide-react';
 import type { IssueContext } from '@lattice/types';
 import { api } from '../lib/api';
+import { IssueState } from './Octicon';
+import { Badge } from './ui/badge';
+import { Button } from './ui/button';
+import { cn } from '../lib/utils';
 
 const TYPE_LABEL: Record<string, string> = {
-  hard_blocker: 'hard blocker',
-  data_contract: 'data contract',
-  shared_artifact: 'shared artifact',
-  ordering_preference: 'ordering preference',
+  hard_blocker: 'must exist first',
+  data_contract: 'defines a shape this uses',
+  shared_artifact: 'touches the same code',
+  ordering_preference: 'nicer in this order',
 };
 
-function EdgeRow({ other, title, edge, direction }: {
-  other: number; title: string; edge: any; direction: 'blocker' | 'dependent';
+function EdgeRow({ other, title, state, edge }: {
+  other: number; title: string; state: string; edge: any;
 }) {
   const [open, setOpen] = useState(false);
   return (
-    <li className="rounded-md border" style={{ borderColor: 'var(--line)', background: 'var(--panel-2)' }}>
-      <button onClick={() => setOpen(!open)} className="w-full text-left px-2.5 py-2">
-        <div className="flex items-center gap-2">
-          <span className="font-mono text-[11px]" style={{ color: 'var(--accent)' }}>#{other}</span>
-          <span className="text-[12px] flex-1 truncate">{title}</span>
-          {!edge.blocking && (
-            <span className="text-[9px] uppercase tracking-wide px-1 rounded shrink-0"
-                  style={{ color: 'var(--muted)', background: 'rgba(139,147,167,.12)' }}>
-              non-blocking
-            </span>
-          )}
-          <span className="text-[10px] font-mono shrink-0" style={{ color: 'var(--muted)' }}>
-            {edge.confidence.toFixed(2)}
+    <li className="rounded-md border bg-background">
+      <button onClick={() => setOpen(!open)}
+              className="flex w-full cursor-pointer items-start gap-2 px-2.5 py-2 text-left">
+        <IssueState state={state} className="mt-px h-4 w-4 shrink-0" />
+        <span className="min-w-0 flex-1">
+          <span className="block truncate text-[12.5px] font-medium">{title}</span>
+          <span className="mt-0.5 block text-[11px] text-muted-foreground">
+            <span className="font-mono">#{other}</span>
+            {' · '}{TYPE_LABEL[edge.type] ?? edge.type}
+            {!edge.blocking && ' · not blocking'}
           </span>
-        </div>
-        <div className="text-[11px] mt-0.5" style={{ color: 'var(--muted)' }}>
-          {TYPE_LABEL[edge.type] ?? edge.type} · {edge.source}
-        </div>
+        </span>
+        <ChevronDown className={cn('mt-0.5 h-3.5 w-3.5 shrink-0 text-muted-foreground transition-transform',
+                                    open && 'rotate-180')} />
       </button>
       {open && (
-        <div className="px-2.5 pb-2.5 pt-0 space-y-1.5">
-          <p className="text-[11.5px] leading-relaxed" style={{ color: 'var(--ink)' }}>
-            {edge.rationale}
-          </p>
+        <div className="space-y-2 px-2.5 pb-2.5">
+          <p className="text-[12px] leading-relaxed">{edge.rationale}</p>
           {edge.evidence && (
-            <blockquote className="text-[11px] leading-relaxed border-l-2 pl-2 italic"
-                        style={{ borderColor: 'var(--accent)', color: 'var(--muted)' }}>
+            <blockquote className="border-l-2 border-primary/50 pl-2 text-[11.5px] italic leading-relaxed text-muted-foreground">
               “{edge.evidence.quote}”
-              <span className="not-italic"> — from #{edge.evidence.issue}</span>
+              <span className="not-italic"> — #{edge.evidence.issue}</span>
             </blockquote>
           )}
+          <p className="text-[11px] text-muted-foreground">
+            {Math.round(edge.confidence * 100)}% confident · from {edge.source === 'given'
+              ? 'GitHub' : edge.source === 'agent_reported' ? 'an agent' : 'the model'}
+          </p>
         </div>
       )}
     </li>
@@ -64,84 +66,82 @@ export function NodePanel({ number, repo, onClose }: {
   }, [number, repo]);
 
   return (
-    <aside className="w-[400px] shrink-0 border-l overflow-y-auto"
-           style={{ borderColor: 'var(--line)', background: 'var(--panel)' }}>
-      <div className="sticky top-0 flex items-start gap-2 px-4 py-3 border-b"
-           style={{ borderColor: 'var(--line)', background: 'var(--panel)' }}>
-        <div className="flex-1 min-w-0">
-          <div className="font-mono text-[11px]" style={{ color: 'var(--muted)' }}>#{number}</div>
-          <h2 className="text-[14px] font-medium leading-snug mt-0.5">
+    <aside className="w-[380px] shrink-0 overflow-y-auto border-l bg-card">
+      <div className="sticky top-0 z-10 flex items-start gap-2 border-b bg-card px-4 py-3">
+        <IssueState state={ctx?.issue.state ?? 'open'} className="mt-0.5 h-4 w-4 shrink-0" />
+        <div className="min-w-0 flex-1">
+          <h2 className="text-[14px] font-semibold leading-snug">
             {ctx?.issue.title ?? (error ? 'Not found' : 'Loading…')}
           </h2>
+          <p className="mt-0.5 font-mono text-[11px] text-muted-foreground">#{number}</p>
         </div>
-        <button onClick={onClose} className="text-lg leading-none px-1 hover:text-white"
-                style={{ color: 'var(--muted)' }} aria-label="Close">×</button>
+        <Button variant="ghost" size="icon" onClick={onClose} aria-label="Close panel"
+                className="-mr-1 h-7 w-7">
+          <X className="h-4 w-4" />
+        </Button>
       </div>
 
-      {error && <p className="p-4 text-[12px]" style={{ color: 'var(--muted)' }}>{error}</p>}
+      {error && <p className="p-4 text-[12px] text-muted-foreground">{error}</p>}
 
       {ctx && (
-        <div className="p-4 space-y-5">
+        <div className="space-y-5 p-4">
           {ctx.schedule && (
-            <div className="grid grid-cols-2 gap-2 text-[11px]">
+            <div className="grid grid-cols-2 gap-2">
               {[
-                ['Wave', ctx.schedule.wave],
-                ['Unblocks', ctx.schedule.blastRadius],
+                ['Unblocks', String(ctx.schedule.blastRadius)],
+                ['Wave', ctx.schedule.wave === 0 ? 'Ready' : String(ctx.schedule.wave)],
                 ['Effort', `${ctx.schedule.effortDays}d`],
-                ['Slack', `${ctx.schedule.slackDays.toFixed(1)}d`],
+                ['Slack', `${ctx.schedule.slackDays.toFixed(0)}d`],
               ].map(([k, v]) => (
-                <div key={String(k)} className="rounded-md px-2.5 py-2"
-                     style={{ background: 'var(--panel-2)' }}>
-                  <div style={{ color: 'var(--muted)' }}>{k}</div>
-                  <div className="font-mono text-[13px] mt-0.5">{v}</div>
+                <div key={k} className="rounded-md border bg-background px-2.5 py-2">
+                  <div className="text-[11px] text-muted-foreground">{k}</div>
+                  <div className="mt-0.5 text-[15px] font-semibold tabular-nums">{v}</div>
                 </div>
               ))}
             </div>
           )}
 
-          <a href={ctx.issue.htmlUrl} target="_blank" rel="noreferrer"
-             className="block text-center text-[12px] rounded-md py-2 border transition-colors hover:border-white"
-             style={{ borderColor: 'var(--line)', color: 'var(--accent)' }}>
-            Open #{number} on GitHub ↗
-          </a>
+          {ctx.issue.labels.length > 0 && (
+            <div className="flex flex-wrap gap-1">
+              {ctx.issue.labels.map((l) => <Badge key={l} variant="muted">{l}</Badge>)}
+            </div>
+          )}
+
+          <Button variant="outline" className="w-full" asChild>
+            <a href={ctx.issue.htmlUrl} target="_blank" rel="noreferrer">
+              View on GitHub <ArrowUpRight className="h-3.5 w-3.5" />
+            </a>
+          </Button>
 
           <section>
-            <h3 className="text-[11px] uppercase tracking-wider mb-2" style={{ color: 'var(--muted)' }}>
-              Blocked by ({ctx.blockers.length})
+            <h3 className="mb-2 text-[12px] font-semibold">
+              Waiting on <span className="text-muted-foreground">({ctx.blockers.length})</span>
             </h3>
             {ctx.blockers.length === 0
-              ? <p className="text-[12px]" style={{ color: 'var(--muted)' }}>Nothing. This is startable now.</p>
+              ? <p className="rounded-md border border-dashed px-3 py-2.5 text-[12px] text-muted-foreground">
+                  Nothing. This one can be started now.
+                </p>
               : <ul className="space-y-1.5">
                   {ctx.blockers.map((b) => (
-                    <EdgeRow key={b.number} other={b.number} title={b.title} edge={b.edge} direction="blocker" />
+                    <EdgeRow key={b.number} other={b.number} title={b.title} state={b.state} edge={b.edge} />
                   ))}
                 </ul>}
           </section>
 
           <section>
-            <h3 className="text-[11px] uppercase tracking-wider mb-2" style={{ color: 'var(--muted)' }}>
-              Blocks ({ctx.dependents.length})
+            <h3 className="mb-2 text-[12px] font-semibold">
+              Unblocks <span className="text-muted-foreground">({ctx.dependents.length})</span>
             </h3>
             {ctx.dependents.length === 0
-              ? <p className="text-[12px]" style={{ color: 'var(--muted)' }}>Nothing depends on this yet.</p>
+              ? <p className="rounded-md border border-dashed px-3 py-2.5 text-[12px] text-muted-foreground">
+                  Nothing depends on this yet.
+                </p>
               : <ul className="space-y-1.5">
                   {ctx.dependents.map((d) => (
-                    <EdgeRow key={d.number} other={d.number} title={d.title} edge={d.edge} direction="dependent" />
+                    <EdgeRow key={d.number} other={d.number} title={d.title} state={d.state} edge={d.edge} />
                   ))}
                 </ul>}
           </section>
-
-          {ctx.issue.body && (
-            <section>
-              <h3 className="text-[11px] uppercase tracking-wider mb-2" style={{ color: 'var(--muted)' }}>
-                Issue
-              </h3>
-              <p className="text-[11.5px] leading-relaxed whitespace-pre-wrap"
-                 style={{ color: 'var(--muted)' }}>
-                {ctx.issue.body.slice(0, 600)}{ctx.issue.body.length > 600 ? '…' : ''}
-              </p>
-            </section>
-          )}
         </div>
       )}
     </aside>
