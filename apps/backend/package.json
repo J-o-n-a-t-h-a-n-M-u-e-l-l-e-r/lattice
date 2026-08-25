@@ -1,0 +1,34 @@
+{
+  "name": "@lattice/backend",
+  "version": "0.1.0",
+  "private": true,
+  "type": "module",
+  "scripts": {
+    "build": "tsc -p tsconfig.json",
+    "dev": "tsx watch src/server.ts",
+    "start": "node dist/server.js",
+    "analyze": "tsx src/scripts/analyze.ts",
+    "emit": "tsx src/scripts/emit-graph.ts",
+    "agent": "tsx src/scripts/agent.ts",
+    "test": "vitest run"
+  },
+  "dependencies": {
+    "@electric-sql/pglite": "^0.5.7",
+    "@hono/node-server": "^1.13.7",
+    "@lattice/types": "*",
+    "@modelcontextprotocol/sdk": "^1.30.0",
+    "@octokit/graphql": "^8.1.1",
+    "@octokit/rest": "^21.0.2",
+    "drizzle-orm": "^0.45.2",
+    "hono": "^4.13.4",
+    "openai": "^4.77.0",
+    "pg": "^8.13.1",
+    "zod": "^3.24.1"
+  },
+  "devDependencies": {
+    "@types/node": "^22.10.2",
+    "@types/pg": "^8.11.10",
+    "tsx": "^4.19.2",
+    "vitest": "^2.1.8"
+  }
+}

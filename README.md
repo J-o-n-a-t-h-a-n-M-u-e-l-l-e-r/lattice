@@ -64,7 +64,62 @@ So Lattice maintains the ordering by itself, continuously, and both kinds of tea
 
 ## Status
 
-🚧 Under construction at the hackathon. See [`docs/06-workstreams.md`](docs/06-workstreams.md) for the five parallel workstreams and the open issues.
+Working end to end. Analysed against its own 54-issue backlog: one model request produced 63 candidate edges, 40 survived validation, 16 became blocking, across 3 waves.
+
+Built: the pipeline, the store, the REST API, the MCP server, the interactive graph, and the agent loop.
+Not built yet: Copilot dispatch, the scheduled GitHub Action, `DEMO_MODE` fixtures, deployment.
+
+## Quickstart
+
+No database and no GitHub token needed to look around — the store runs on
+[PGlite](https://pglite.dev) (real Postgres, embedded), so a clone just works.
+
+```bash
+npm install
+npm test                      # graph unit tests + writes artifacts/graph.json
+```
+
+To analyse a real repo you need a GitHub token (read-only) and an OpenRouter key:
+
+```bash
+cp .env.example .env          # fill in GITHUB_TOKEN + OPENROUTER_API_KEY
+export GITHUB_TOKEN=$(gh auth token)
+export LATTICE_OWNER=your-org LATTICE_REPO=your-repo
+
+npm run analyze               # one model request for a ~50-issue backlog
+npm run dev                   # backend :3001, web :3000
+```
+
+Then open **http://localhost:3000**.
+
+| Command | What it does |
+|---|---|
+| `npm run build` | Builds both services |
+| `npm test` | Runs the tests, then emits `artifacts/graph.json` and `artifacts/schedule.json` |
+| `npm run analyze` | Runs the pipeline once against `LATTICE_OWNER/LATTICE_REPO` |
+| `npm run agent -- --agents 3` | Three agents claim work concurrently through MCP; asserts leases are atomic |
+| `npm run dev` | Both services with hot reload |
+
+Set `DATABASE_URL` to use a hosted Postgres (Neon) instead of the embedded one.
+
+### The machine-readable graph
+
+`npm test` writes `artifacts/graph.json` and `artifacts/schedule.json`. That
+makes the schedule **diffable**: change the cycle-breaking weights and the
+critical-path shift shows up as a reviewable diff rather than a vague feeling
+that the graph looks different. It is also the cheapest integration test in the
+repo — if that file is well-formed and acyclic, the whole pure core is wired up.
+
+## Architecture at a glance
+
+Two services in one npm-workspaces monorepo:
+
+- **`apps/backend`** — reads GitHub, runs inference, owns the store, serves the
+  REST API and the MCP server.
+- **`apps/web`** — the interactive graph. Holds the backend URL and an API token
+  and *nothing else*: no database URL, no GitHub token, no model key.
+
+See [`docs/01-architecture.md`](docs/01-architecture.md).
 
 ## Documentation
 

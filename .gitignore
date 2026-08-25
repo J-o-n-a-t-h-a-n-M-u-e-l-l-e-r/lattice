@@ -16,3 +16,13 @@ dist/
 
 .DS_Store
 *.log
+
+# --- build output ---
+dist/
+.next/
+artifacts/
+*.tsbuildinfo
+
+# --- local database (PGlite) ---
+.lattice/pgdata/
+apps/backend/.lattice/
