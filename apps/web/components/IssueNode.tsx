@@ -1,49 +1,51 @@
 'use client';
 import { Handle, Position, type NodeProps } from '@xyflow/react';
 import type { GraphNode } from '@lattice/types';
+import { NODE_H, NODE_W } from './graph-layout';
 
 export function IssueNode({ data }: NodeProps) {
   const { node, onCritical, dim, selected } = data as {
     node: GraphNode; onCritical: boolean; dim: boolean; selected: boolean;
   };
 
-  const accent = node.ready ? 'var(--ready)' : 'var(--blocked)';
-  const border = selected ? 'var(--accent)' : onCritical ? 'var(--critical)' : 'var(--line)';
+  const border = selected ? '#58a6ff' : onCritical ? '#f0883e' : '#2a3140';
 
   return (
     <div
-      className="rounded-lg border px-3 py-2.5 transition-all duration-150"
+      className="rounded-xl border px-3 py-2.5 flex flex-col gap-1 transition-[opacity,border-color,box-shadow] duration-150"
       style={{
-        width: 250,
-        background: selected ? 'var(--panel-2)' : 'var(--panel)',
+        width: NODE_W, height: NODE_H,
+        background: selected ? '#1a1f2b' : '#141821',
         borderColor: border,
-        borderWidth: onCritical || selected ? 2 : 1,
-        opacity: dim ? 0.2 : 1,
-        boxShadow: selected ? '0 0 0 3px rgba(88,166,255,.18)' : 'none',
+        borderWidth: selected || onCritical ? 2 : 1,
+        opacity: dim ? 0.15 : 1,
+        boxShadow: selected ? '0 0 0 4px rgba(88,166,255,.15)' : 'none',
       }}
     >
-      <Handle type="target" position={Position.Left} style={{ opacity: 0, width: 1, height: 1 }} />
-      <div className="flex items-center gap-2 mb-1">
-        <span className="inline-block w-1.5 h-1.5 rounded-full shrink-0" style={{ background: accent }} />
-        <span className="font-mono text-[11px]" style={{ color: 'var(--muted)' }}>#{node.number}</span>
+      <Handle type="target" position={Position.Top} style={{ opacity: 0, width: 1, height: 1 }} />
+      <div className="flex items-center gap-1.5">
+        <span className="w-1.5 h-1.5 rounded-full shrink-0"
+              style={{ background: node.ready ? '#3fb950' : '#4d5566' }}
+              title={node.ready ? 'ready' : `blocked (wave ${node.wave})`} />
+        <span className="font-mono text-[11px]" style={{ color: '#8b93a7' }}>#{node.number}</span>
         {onCritical && (
-          <span className="text-[9px] font-semibold uppercase tracking-wider px-1 py-px rounded"
-                style={{ color: 'var(--critical)', background: 'rgba(240,136,62,.12)' }}>
-            critical
-          </span>
+          <span className="text-[9px] font-medium uppercase tracking-wider"
+                style={{ color: '#f0883e' }}>critical</span>
         )}
         {node.blastRadius > 0 && (
-          <span className="ml-auto text-[10px] font-mono px-1.5 py-px rounded shrink-0"
-                style={{ background: 'rgba(88,166,255,.12)', color: 'var(--accent)' }}
-                title={`Unblocks ${node.blastRadius} issue(s) transitively`}>
-            ↓{node.blastRadius}
+          <span className="ml-auto text-[10px] font-mono px-1.5 rounded shrink-0"
+                style={{ background: 'rgba(88,166,255,.14)', color: '#58a6ff' }}
+                title={`Unblocks ${node.blastRadius} issue(s)`}>
+            unblocks {node.blastRadius}
           </span>
         )}
       </div>
-      <div className="text-[12.5px] leading-snug line-clamp-2" style={{ color: 'var(--ink)' }}>
+      <div className="text-[12px] leading-[1.35] overflow-hidden"
+           style={{ color: '#e6e9ef', display: '-webkit-box', WebkitLineClamp: 2,
+                    WebkitBoxOrient: 'vertical' }}>
         {node.title}
       </div>
-      <Handle type="source" position={Position.Right} style={{ opacity: 0, width: 1, height: 1 }} />
+      <Handle type="source" position={Position.Bottom} style={{ opacity: 0, width: 1, height: 1 }} />
     </div>
   );
 }

@@ -13,6 +13,7 @@ export interface RunOptions {
   trigger?: RunTrigger;
   clusterSize?: number;
   cached?: boolean;             // reuse the stored issue snapshot, skip GitHub
+  existingRunId?: string;       // a run row already created by the API
   onProgress?: (line: string) => void;
 }
 
@@ -39,7 +40,8 @@ export async function runPipeline(opts: RunOptions): Promise<RunResult> {
   const clusterSize = opts.clusterSize ?? Number(process.env.LATTICE_CLUSTER_SIZE ?? '0');
   const log = opts.onProgress ?? (() => {});
 
-  const runId = await store.startRun(repo, opts.trigger ?? 'manual', MODEL, clusterSize);
+  const runId = opts.existingRunId
+    ?? await store.startRun(repo, opts.trigger ?? 'manual', MODEL, clusterSize);
 
   try {
     // ---- L0 ingest -------------------------------------------------------
@@ -51,6 +53,17 @@ export async function runPipeline(opts: RunOptions): Promise<RunResult> {
     }
     const open = issues.filter((i) => i.state === 'open');
     log(`${issues.length} issues (${open.length} open)`);
+
+    // A guard, not a limit we are proud of. The whole backlog goes to the model
+    // in one request, so a repo with a thousand open issues would blow the
+    // context, take an age, and eat a day's request quota for a graph nobody
+    // could read. Raise LATTICE_MAX_ISSUES once clustering (#12) is enabled.
+    const maxIssues = Number(process.env.LATTICE_MAX_ISSUES ?? '300');
+    if (open.length > maxIssues && clusterSize === 0) {
+      throw new Error(
+        `${open.length} open issues exceeds LATTICE_MAX_ISSUES=${maxIssues}. ` +
+        `Set LATTICE_CLUSTER_SIZE to enable the clustered path, or raise the cap.`);
+    }
 
     // ---- L1 given edges: API-sourced, no text parsing --------------------
     let given: Edge[] = [];

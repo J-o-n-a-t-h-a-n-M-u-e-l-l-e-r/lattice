@@ -67,11 +67,24 @@ export function apiRoutes() {
     return c.json({ ok: true });
   });
 
+  app.get('/repos', async (c) => c.json(await store.listRepos()));
+
+  /**
+   * Starts a run and returns immediately. A full analysis takes minutes, so
+   * blocking here would just time out - the client polls GET /runs/:id.
+   */
   app.post('/runs', async (c) => {
     const body = await c.req.json().catch(() => ({}));
-    const repo = body.repo ?? defaultRepo();
-    const result = await runPipeline({ repo, trigger: 'manual', cached: body.cached === true });
-    return c.json(result);
+    const repo = normaliseRepo(body.repo ?? defaultRepo());
+    if (!repo) return c.json({ error: 'bad_repo', detail: 'Expected owner/name or a GitHub URL.' }, 400);
+
+    const inFlight = await store.runningRun(repo);
+    if (inFlight) return c.json({ runId: inFlight, repo, status: 'running', existing: true }, 202);
+
+    const runId = await store.startRun(repo, 'manual', '(starting)', 0);
+    void runPipeline({ repo, trigger: 'manual', existingRunId: runId })
+      .catch((err) => console.error(`[lattice] run failed for ${repo}:`, err.message));
+    return c.json({ runId, repo, status: 'running' }, 202);
   });
 
   app.post('/webhook', async (c) => {
@@ -92,6 +105,16 @@ export function apiRoutes() {
  * Debounce so an editing spree is one run, not five. The free-model quota is
  * 50 requests a day; five runs for one burst of edits is how you lose it.
  */
+/** Accepts "owner/name", a github.com URL, or a git remote. */
+export function normaliseRepo(input: string): string | null {
+  const s = String(input ?? '').trim().replace(/\.git$/, '');
+  if (!s) return null;
+  const url = /github\.com[/:]([^/]+)\/([^/?#]+)/i.exec(s);
+  if (url) return `${url[1]}/${url[2]}`;
+  const plain = /^([A-Za-z0-9._-]+)\/([A-Za-z0-9._-]+)$/.exec(s);
+  return plain ? `${plain[1]}/${plain[2]}` : null;
+}
+
 const pending = new Map<string, NodeJS.Timeout>();
 const DEBOUNCE_MS = Number(process.env.LATTICE_DEBOUNCE_MS ?? '60000');
 

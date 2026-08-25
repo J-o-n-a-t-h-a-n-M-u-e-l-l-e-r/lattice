@@ -29,11 +29,14 @@ function Section({ title, count, children }: { title: string; count: number; chi
 }
 
 export default function RunsPage() {
+  const repo = typeof window !== 'undefined'
+    ? new URLSearchParams(window.location.search).get('repo') ?? undefined
+    : undefined;
   const [runs, setRuns] = useState<RunSummary[] | null>(null);
   const [detail, setDetail] = useState<RunDetail | null>(null);
   const [error, setError] = useState<string | null>(null);
 
-  useEffect(() => { api.runs().then(setRuns).catch((e) => setError(e.message)); }, []);
+  useEffect(() => { api.runs(repo).then(setRuns).catch((e) => setError(e.message)); }, [repo]);
   useEffect(() => {
     if (runs?.[0] && !detail) api.run(runs[0].id).then(setDetail).catch(() => {});
   }, [runs, detail]);

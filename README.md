@@ -94,7 +94,8 @@ npm run build && npm start -w @lattice/backend      # :3001
 npm run dev -w @lattice/web                          # :3000
 ```
 
-Open **http://localhost:3000**.
+Open **http://localhost:3000**, paste any public GitHub repo URL, and it
+analyses it. Repos you have already analysed are listed on the same page.
 
 > `npm run dev` (both services with hot reload) uses `tsx`. If it fails with
 > `The package "@esbuild/darwin-arm64" could not be found`, npm has dropped an

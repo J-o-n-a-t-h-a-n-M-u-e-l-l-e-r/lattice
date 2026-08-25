@@ -379,3 +379,40 @@ export async function closeIssueLocally(repo: string, number: number) {
 }
 
 export type { GraphPayload };
+
+/* ────────────────────────────── repo directory ────────────────────────────── */
+
+export interface RepoRow {
+  repo: string;
+  issues: number;
+  latestRunId: string | null;
+  updatedAt: string | null;
+}
+
+/** Every repo this instance has analysed - the SaaS landing page lists these. */
+export async function listRepos(): Promise<RepoRow[]> {
+  const db = await getDb();
+  const rows = await db.query<Record<string, any>>(
+    `SELECT i.repo,
+            COUNT(*) FILTER (WHERE i.state = 'open') AS issues,
+            s.latest_run_id, s.updated_at
+     FROM issues i
+     LEFT JOIN repo_state s ON s.repo = i.repo
+     GROUP BY i.repo, s.latest_run_id, s.updated_at
+     ORDER BY s.updated_at DESC NULLS LAST`);
+  return rows.map((r) => ({
+    repo: r.repo,
+    issues: Number(r.issues),
+    latestRunId: r.latest_run_id ?? null,
+    updatedAt: r.updated_at ? new Date(r.updated_at).toISOString() : null,
+  }));
+}
+
+/** Is a run already in flight? Prevents a double-submit starting two. */
+export async function runningRun(repo: string): Promise<string | null> {
+  const db = await getDb();
+  const r = row(await db.query<Record<string, any>>(
+    `SELECT id FROM runs WHERE repo = $1 AND status = 'running'
+     AND started_at > now() - interval '30 minutes' ORDER BY started_at DESC LIMIT 1`, [repo]));
+  return r?.id ?? null;
+}

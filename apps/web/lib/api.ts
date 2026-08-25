@@ -41,7 +41,27 @@ async function get<T>(path: string): Promise<T> {
   return res.json() as Promise<T>;
 }
 
+export interface RepoRow {
+  repo: string; issues: number; latestRunId: string | null; updatedAt: string | null;
+}
+
+async function post<T>(path: string, body: unknown): Promise<T> {
+  const url = `${BASE}/api${path}`;
+  const res = await fetch(url, {
+    method: 'POST',
+    headers: { 'content-type': 'application/json', ...(TOKEN ? { authorization: `Bearer ${TOKEN}` } : {}) },
+    body: JSON.stringify(body),
+    cache: 'no-store',
+  }).catch(() => { throw new ApiError(`Could not reach ${url}`, undefined, url); });
+  const json = await res.json().catch(() => ({}));
+  if (!res.ok) throw new ApiError((json as any).detail ?? (json as any).error ?? res.statusText, res.status, url);
+  return json as T;
+}
+
 export const api = {
+  repos: () => get<RepoRow[]>('/repos'),
+  startRun: (repo: string) =>
+    post<{ runId: string; repo: string; status: string; existing?: boolean }>('/runs', { repo }),
   graph: (repo?: string) =>
     get<GraphPayload>(`/graph${repo ? `?repo=${encodeURIComponent(repo)}` : ''}`),
   runs: (repo?: string) =>
