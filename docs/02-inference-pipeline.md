@@ -29,7 +29,7 @@ trigger ──► L0 ingest ──► L1 given edges ──► L2 cluster (optio
 
 One paginated GraphQL query, 50 issues per page, fetching per issue:
 
-`number`, `id` (node ID — needed for Copilot assignment), **`databaseId`** (the integer the REST `blocked_by` POST needs — **get it here, not with N extra calls**), `title`, `body`, `labels`, `milestone`, `assignees`, `state`, `parent` / `subIssues` (needs `GraphQL-Features: sub_issues`), and `timelineItems(itemTypes: [CROSS_REFERENCED_EVENT, CONNECTED_EVENT], first: 20)`.
+`number`, `id` (node ID), **`databaseId`** (the stable identifier across renames), `title`, `body`, `labels`, `milestone`, `assignees`, `state`, `parent` / `subIssues` (needs `GraphQL-Features: sub_issues`), and `timelineItems(itemTypes: [CROSS_REFERENCED_EVENT, CONNECTED_EVENT], first: 20)`.
 
 Then one REST `GET .../dependencies/blocked_by` per issue to learn what is *already* recorded. Batch with concurrency 5.
 

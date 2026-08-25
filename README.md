@@ -67,7 +67,7 @@ So Lattice maintains the ordering by itself, continuously, and both kinds of tea
 Working end to end. Analysed against its own 54-issue backlog: one model request produced 63 candidate edges, 40 survived validation, 16 became blocking, across 3 waves.
 
 Built: the pipeline, the store, the REST API, the MCP server, the interactive graph, and the agent loop.
-Not built yet: Copilot dispatch, the scheduled GitHub Action, `DEMO_MODE` fixtures, deployment.
+Not built yet: the scheduled GitHub Action, `DEMO_MODE` fixtures, deployment.
 
 ## Quickstart
 
@@ -173,7 +173,6 @@ See [`docs/01-architecture.md`](docs/01-architecture.md).
 | [`docs/02-inference-pipeline.md`](docs/02-inference-pipeline.md) | The five inference layers, the LLM prompt, anti-hallucination guards |
 | [`docs/03-graph-scheduling.md`](docs/03-graph-scheduling.md) | Tarjan, cycle breaking, waves, critical path, blast radius |
 | [`docs/04-mcp-surface.md`](docs/04-mcp-surface.md) | The seven MCP tools agents call |
-| [`docs/05-copilot-dispatch.md`](docs/05-copilot-dispatch.md) | Assigning Copilot, briefing injection, branch stacking |
 | [`docs/06-workstreams.md`](docs/06-workstreams.md) | The five-way parallel split for the team |
 | [`docs/07-demo-script.md`](docs/07-demo-script.md) | The two-minute demo, beat by beat |
 | [`docs/08-risks.md`](docs/08-risks.md) | Honest weaknesses, fallbacks, stop-loss rules |
@@ -181,6 +180,7 @@ See [`docs/01-architecture.md`](docs/01-architecture.md).
 | [`docs/10-model-provider.md`](docs/10-model-provider.md) | OpenRouter + Ox Alpha: setup, schema caveat, rate limits, privacy |
 | [`docs/11-graph-store.md`](docs/11-graph-store.md) | Where the graph is persisted, and the three cache layers |
 | [`docs/12-rest-api.md`](docs/12-rest-api.md) | The REST contract the web app consumes |
+| [`docs/13-using-lattice-mcp.md`](docs/13-using-lattice-mcp.md) | Connect Lattice to another GitHub Copilot App repository |
 | [`AGENTS.md`](AGENTS.md) | How agents should work in this repo |
 
 ## Quickstart

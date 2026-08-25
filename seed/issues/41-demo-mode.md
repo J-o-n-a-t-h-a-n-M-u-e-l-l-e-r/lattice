@@ -2,7 +2,7 @@
 <!-- labels: lane:demo,size:M -->
 **What**
 
-An environment flag that binds `GraphStore` to committed fixtures: no database, no `GITHUB_TOKEN`, no `OPENROUTER_API_KEY`, no Copilot seat. Graph view, run history, MCP responses — all from committed JSON. Write actions become no-ops that show what they *would* send.
+An environment flag that binds `GraphStore` to committed fixtures: no database, no `GITHUB_TOKEN`, and no `OPENROUTER_API_KEY`. Graph view, run history, and MCP responses all come from committed JSON.
 
 **Why it matters**
 
@@ -21,7 +21,6 @@ It also makes our own development faster and gives us a demo that cannot fail fr
 - [ ] Works with an empty `.env` and no database running
 - [ ] Every screen renders with realistic data, including rejections and a broken cycle
 - [ ] MCP tools respond from fixtures
-- [ ] Write actions show intent rather than failing
 - [ ] Documented as the first quickstart path in the README
 
 **Depends on:** the store interface in #3, the fixture in #4, and the graph view in #25.

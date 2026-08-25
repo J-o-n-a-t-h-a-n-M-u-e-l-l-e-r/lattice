@@ -12,7 +12,7 @@ Three things to get right:
 
 - **Lead with the scheduler, not the visualization.** Opening on a pretty graph invites "GitHub will just build this". Opening on *agents do the wrong work in the wrong order* does not.
 - **Show the rejection.** Flipping one genuinely wrong edge on camera is the moment the human checkpoint stops being a claim. Rehearse which edge.
-- **Start the Copilot run ~20 minutes before recording.** PRs take minutes, not seconds. Show one in flight and one already open.
+- **Run `scripts/agent.ts` during recording.** It demonstrates the MCP coordination loop in seconds.
 
 Record a rough backup version as soon as there's anything demoable — an ugly complete recording beats a beautiful one that didn't get made.
 

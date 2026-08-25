@@ -1,8 +1,8 @@
 # 04 · MCP surface
 
-Mounted at `/api/mcp`, Streamable HTTP, bearer auth from `COPILOT_MCP_LATTICE_TOKEN`.
+Mounted at `/mcp`, Streamable HTTP, bearer auth from `LATTICE_MCP_TOKEN`.
 
-**Tools only** — Copilot cloud agent supports MCP *tools* but ignores resources and prompts. Every tool also needs an entry in the repo's Copilot MCP `tools` allowlist.
+**Tools only** — Lattice exposes the derived schedule through MCP tools.
 
 ## The design principle, stated on stage
 
@@ -127,7 +127,9 @@ Great demo line, ~20 lines of code — it reuses the wave function with those is
 ## Testing
 
 - `npx @modelcontextprotocol/inspector` against the running server.
-- Connect **Claude Code** to it and ask "what should I work on next".
-- `scripts/agent.ts` is a real MCP *client* that calls `claim_next_issue` → prints the briefing → `report_progress`. Runs in three seconds, proves the loop, needs no Copilot seat.
+- `scripts/agent.ts` is a real MCP *client* that calls `claim_next_issue` → prints the briefing → `report_progress`. Runs in three seconds and proves the loop.
 
-Build `scripts/agent.ts` regardless of Copilot's health — it's how the MCP server gets tested, **and** it's the fallback demo if Copilot misbehaves on the day.
+Build `scripts/agent.ts` as the MCP server's local integration test and demo.
+
+For GitHub Copilot App setup, see
+[`13-using-lattice-mcp.md`](13-using-lattice-mcp.md).

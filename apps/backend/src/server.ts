@@ -18,7 +18,7 @@ const honoListener = getRequestListener(app.fetch);
 const server = createServer(async (req, res) => {
   // MCP needs the raw Node req/res, so it bypasses Hono entirely.
   if (req.url?.startsWith('/mcp')) {
-    const expected = process.env.COPILOT_MCP_LATTICE_TOKEN;
+    const expected = process.env.LATTICE_MCP_TOKEN;
     if (expected) {
       const got = String(req.headers.authorization ?? '').replace(/^Bearer\s+/i, '');
       if (got !== expected) {

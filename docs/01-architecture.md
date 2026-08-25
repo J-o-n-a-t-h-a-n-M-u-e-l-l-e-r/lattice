@@ -19,7 +19,7 @@
               │ REST          │ MCP
               ▼               ▼
         ┌───────────┐   coding agents
-        │  WEB      │   (Copilot, Claude Code)
+        │  WEB      │   (MCP clients)
         │  Next.js  │
         │  graph UI │
         └───────────┘
@@ -42,7 +42,7 @@ They deploy independently.
 
 npm workspaces, so there is still **one `npm run build` and one `npm test`** at the root (#54).
 
-Backend is a plain Node service — no Next.js — because it is an API and a job runner, not a rendered app. The MCP server has to be an HTTP endpoint Copilot's cloud agent can reach on a public URL, which rules out anything file-based or local-only.
+Backend is a plain Node service — no Next.js — because it is an API and a job runner, not a rendered app. The MCP server is an HTTP endpoint for external clients, which rules out anything file-based or local-only for a deployment.
 
 Python was considered for the graph work and rejected. The algorithms people reach for `networkx` for are, at our scale, ~200 lines of TypeScript: Tarjan SCC, Kahn, longest-path DP, transitive-closure bitsets. Writing them ourselves means we control the cycle-breaking weights and can explain them on stage — and it avoids a second runtime, a second deployment, and a serialisation seam.
 
@@ -57,7 +57,6 @@ lattice/
       src/
         github/
           fetch.ts     # GraphQL issue ingest + REST dependency reads (READ ONLY)
-          copilot.ts   # suggestedActors + replaceActorsForAssignable
         infer/
           given.ts     # L1 native blocked_by + sub-issue hierarchy
           llm.ts       # L3 OpenRouter edge extraction
@@ -77,7 +76,7 @@ lattice/
         mcp/           # MCP server
         scripts/
           analyze.ts   # the pipeline as a CLI
-          agent.ts     # local MCP client; proves the agent loop without Copilot
+          agent.ts     # local MCP client; proves the agent loop
     web/
       app/
         page.tsx       # the interactive graph

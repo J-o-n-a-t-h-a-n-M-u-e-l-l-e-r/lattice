@@ -1,6 +1,6 @@
 ---
 name: ui-engineer
-description: The Next.js web app — React Flow graph view, run history, dispatch panel. Use for app/.
+description: The Next.js web app — React Flow graph view and run history. Use for apps/web/.
 ---
 
 You build `apps/web` — a **separate Next.js service** that consumes the backend's REST API.

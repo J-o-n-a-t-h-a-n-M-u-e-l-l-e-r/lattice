@@ -7,7 +7,7 @@ Clicking a node opens a panel showing:
 - Title, state, labels, effort, wave, blast radius, and a **link to the issue on GitHub**
 - **Blockers** — each with its state, and *why*: dependency type, confidence, rationale, and the verbatim quote from the issue that justifies it
 - **Dependents** — each with *what they need from you*
-- **Actions** — dispatch to Copilot, and (later, #50) pin or suppress an edge
+- **Actions** — pin or suppress an edge (later, #50)
 
 **Why it matters**
 

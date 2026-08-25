@@ -51,16 +51,15 @@ npm test          # all tests, and emits artifacts/graph.json
 - `apps/backend/src/graph/**` gets real unit tests against hand-built fixtures — a known DAG, a planted cycle, a diamond. These are cheap and they are the ones that matter.
 - `npm test` also emits `artifacts/graph.json`; if that comes out well-formed and acyclic, the whole pure-functional core is wired up correctly.
 - The inference layers are validated against a hand-labelled gold set (see issue `[X]  Gold-set labelling`), not by unit test. Report precision, don't assert it.
-- Copilot dispatch must be exercised in `--dry-run` before it assigns anything for real. It is the only write in the project.
 
 ## Things that will waste your time if you don't know them
 
 - Fetch `databaseId` alongside `number` during ingest. `number` is what humans see; `databaseId` is the stable identifier across renames.
-- Sub-issue and Copilot-assignment GraphQL calls need specific `GraphQL-Features` headers.
+- Sub-issue GraphQL calls need a specific `GraphQL-Features` header.
 - Native `blocked_by` read from GitHub becomes a `given` edge — immutable, and the model may not contradict it. That is how a human overrules the graph.
 
 Full detail in [`docs/09-github-api-notes.md`](docs/09-github-api-notes.md).
 
 ## What "done" means
 
-An issue is done when: the code works, `src/graph/**` changes have tests, `--dry-run` was exercised for write-path changes, and the PR body says what you'd want a teammate to know in six months. Not when it compiles.
+An issue is done when: the code works, `src/graph/**` changes have tests, and the PR body says what you'd want a teammate to know in six months. Not when it compiles.
