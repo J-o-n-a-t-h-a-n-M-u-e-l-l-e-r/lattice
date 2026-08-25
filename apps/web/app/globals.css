@@ -2,28 +2,90 @@
 @tailwind components;
 @tailwind utilities;
 
-:root {
-  --bg: #0b0d12;
-  --panel: #12151d;
-  --panel-2: #171b25;
-  --line: #232936;
-  --ink: #e6e9ef;
-  --muted: #8b93a7;
-  --ready: #3fb950;
-  --blocked: #6b7280;
-  --critical: #f0883e;
-  --accent: #58a6ff;
+/**
+ * GitHub Primer tokens. Devs recognise this palette instantly, which is worth
+ * more here than a distinctive one - the tool sits next to GitHub all day.
+ */
+@layer base {
+  :root {
+    --background: 0 0% 100%;              /* canvas.default   #ffffff */
+    --foreground: 214 13% 14%;            /* fg.default       #1f2328 */
+    --card: 0 0% 100%;
+    --card-foreground: 214 13% 14%;
+    --popover: 0 0% 100%;
+    --popover-foreground: 214 13% 14%;
+    --primary: 212 92% 45%;               /* accent.fg        #0969da */
+    --primary-foreground: 0 0% 100%;
+    --secondary: 210 17% 97%;             /* canvas.subtle    #f6f8fa */
+    --secondary-foreground: 214 13% 14%;
+    --muted: 210 17% 97%;
+    --muted-foreground: 215 8% 43%;       /* fg.muted         #656d76 */
+    --accent: 210 17% 97%;
+    --accent-foreground: 214 13% 14%;
+    --destructive: 356 71% 48%;           /* danger.fg        #d1242f */
+    --destructive-foreground: 0 0% 100%;
+    --border: 210 18% 84%;                /* border.default   #d0d7de */
+    --input: 210 18% 84%;
+    --ring: 212 92% 45%;
+    --radius: 0.375rem;                   /* Primer uses 6px */
+
+    --success: 137 66% 30%;               /* success.fg       #1a7f37 */
+    --attention: 40 100% 30%;             /* attention.fg     #9a6700 */
+    --ready: 137 66% 30%;
+    --critical: 40 100% 30%;
+    --edge: 215 8% 55%;
+    --edge-lit: 212 92% 45%;
+    --canvas: 210 17% 97%;
+    --dots: 210 18% 88%;
+  }
+
+  .dark {
+    --background: 216 28% 7%;             /* canvas.default   #0d1117 */
+    --foreground: 213 35% 93%;            /* fg.default       #e6edf3 */
+    --card: 215 21% 11%;                  /* canvas.subtle    #161b22 */
+    --card-foreground: 213 35% 93%;
+    --popover: 215 21% 11%;
+    --popover-foreground: 213 35% 93%;
+    --primary: 212 100% 67%;              /* accent.fg        #58a6ff */
+    --primary-foreground: 216 28% 7%;
+    --secondary: 212 12% 18%;
+    --secondary-foreground: 213 35% 93%;
+    --muted: 212 12% 18%;
+    --muted-foreground: 213 8% 53%;       /* fg.muted         #7d8590 */
+    --accent: 212 12% 18%;
+    --accent-foreground: 213 35% 93%;
+    --destructive: 3 93% 63%;             /* danger.fg        #f85149 */
+    --destructive-foreground: 0 0% 100%;
+    --border: 212 12% 21%;                /* border.default   #30363d */
+    --input: 212 12% 21%;
+    --ring: 212 100% 67%;
+
+    --success: 128 49% 49%;               /* success.fg       #3fb950 */
+    --attention: 41 72% 48%;              /* attention.fg     #d29922 */
+    --ready: 128 49% 49%;
+    --critical: 41 72% 48%;
+    --edge: 213 8% 45%;
+    --edge-lit: 212 100% 67%;
+    --canvas: 216 28% 7%;
+    --dots: 212 12% 18%;
+  }
 }
 
-html, body { background: var(--bg); color: var(--ink); }
-body { font-feature-settings: 'cv02','cv03','cv04','cv11'; }
+@layer base {
+  * { @apply border-border; }
+  body { @apply bg-background text-foreground; }
+}
 
 .react-flow__attribution { display: none; }
-.react-flow__edge-path { transition: stroke-width .12s ease, opacity .12s ease; }
 .react-flow__node { cursor: pointer; }
+.react-flow__edge-path { transition: stroke .15s ease, opacity .15s ease; }
 
-::-webkit-scrollbar { width: 10px; height: 10px; }
-::-webkit-scrollbar-thumb { background: #262c3a; border-radius: 6px; }
-::-webkit-scrollbar-track { background: transparent; }
+@media (prefers-reduced-motion: reduce) {
+  *, *::before, *::after {
+    animation-duration: .01ms !important;
+    animation-iteration-count: 1 !important;
+    transition-duration: .01ms !important;
+  }
+}
 
 @keyframes lattice-spin { to { transform: rotate(360deg); } }

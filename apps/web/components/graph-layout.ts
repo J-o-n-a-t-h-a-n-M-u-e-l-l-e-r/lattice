@@ -1,10 +1,10 @@
 import type { Edge as LatticeEdge, GraphNode } from '@lattice/types';
 import type { Edge, Node } from '@xyflow/react';
 
-export const NODE_W = 230;
-export const NODE_H = 76;
-const GAP_X = 34;
-const LAYER_H = 190;
+import { NODE_H, NODE_W } from './IssueNode';
+export { NODE_H, NODE_W };
+const GAP_X = 22;
+const LAYER_H = 218;   // room for the row label above each wave
 const DUMMY_W = 26;          // a routed edge reserves this much room in a row
 
 /**
@@ -58,7 +58,7 @@ type Seg = { from: string; to: string };
 export interface Laid {
   nodes: Node[];
   edges: Edge[];
-  rows: Array<{ wave: number; y: number; count: number; height: number }>;
+  rows: Array<{ wave: number; y: number; count: number; height: number; x: number }>;
   labelX: number;
   crossings: number;
 }
@@ -267,19 +267,25 @@ export function layout(
   const criticalSet = new Set(opts.criticalPath);
   const byNumber = new Map(nodes.map((n) => [n.number, n]));
 
-  const rows = layers.map((row, li) => ({
-    wave: li,
-    y: yOf(li),
-    count: row.filter((c) => c.real !== null).length,
-    height: NODE_H,
-  }));
+  const rows = layers.map((row, li) => {
+    const reals = row.filter((c) => c.real !== null);
+    return {
+      wave: li,
+      y: yOf(li),
+      count: reals.length,
+      height: NODE_H,
+      // Left edge of this row, so the label can sit above it rather than in a
+      // gutter far off to the side where fitView clips it.
+      x: reals.length ? Math.min(...reals.map((c) => c.x)) : minX + shift,
+    };
+  });
 
   const flowNodes: Node[] = [];
   for (const r of rows) {
     flowNodes.push({
       id: `wave-${r.wave}`,
       type: 'waveLabel',
-      position: { x: minX + shift - 210, y: r.y + 10 },
+      position: { x: r.x, y: r.y - 46 },
       data: { wave: r.wave, count: r.count },
       draggable: false, selectable: false, focusable: false, zIndex: 0,
     });
