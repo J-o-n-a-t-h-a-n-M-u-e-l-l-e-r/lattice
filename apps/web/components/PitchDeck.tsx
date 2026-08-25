@@ -2,6 +2,7 @@
 
 import { useEffect, useRef, useState, type CSSProperties } from 'react';
 import { Logo } from './Logo';
+import { PitchSlideDual } from './PitchSlideDual';
 import styles from './PitchDeck.module.css';
 
 type IssueCard = {
@@ -91,7 +92,7 @@ export function PitchDeck() {
       setIntroStage((stage) => stage + 1);
       return;
     }
-    setSlide((current) => Math.min(current + 1, 2));
+    setSlide((current) => Math.min(current + 1, 3));
   };
 
   const previous = () => {
@@ -122,7 +123,7 @@ export function PitchDeck() {
         channel.postMessage({ source: 'lattice-pitch-deck', type: 'state', ...deckState.current });
       }
       if (data.type === 'go-to') {
-        const destination = Math.max(0, Math.min(2, Number(data.slide)));
+        const destination = Math.max(0, Math.min(3, Number(data.slide)));
         setSlide(destination);
         setIntroStage(destination === 0 ? Math.max(0, Math.min(2, Number(data.introStage) || 0)) : 0);
       }
@@ -358,8 +359,13 @@ export function PitchDeck() {
         </p>
       </section>
 
+      <section className={`${styles.slide} ${slide === 3 ? styles.active : ''}`} aria-hidden={slide !== 3}>
+        <PitchSlideDual />
+      </section>
+
       <footer className={styles.pitchFooter}>
-        Alba · Albert · Jonathan · Nicolas · Tong&nbsp;&nbsp;—&nbsp;&nbsp;Microsoft Summer Mini-Hackathon 2026
+        <span>Alba · Albert · Jonathan · Nicolas · Tong</span>
+        <span>Microsoft Summer Mini-Hackathon 2026</span>
       </footer>
       <output className={styles.slideNumber} aria-label={`Slide ${slide + 1}`}>
         {String(slide + 1).padStart(2, '0')}

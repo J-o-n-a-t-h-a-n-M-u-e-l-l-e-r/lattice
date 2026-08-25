@@ -6,11 +6,15 @@ import styles from './PitchPresenter.module.css';
 
 type DeckState = {
   slide: number;
-  introStage: number;
+  graphStage: number;
   blackout: boolean;
 };
 
 const slides = [
+  {
+    title: 'The one-page playbook',
+    note: 'Start here. This is the team’s operating contract: a thin working journey, clear ownership, small PRs, and time left to rehearse.',
+  },
   {
     title: 'The hidden graph',
     note: 'Ask which work can safely start right now. Let the floating issues establish the problem, then reveal the schedule.',
@@ -22,6 +26,14 @@ const slides = [
   {
     title: 'One pass. A shared schedule.',
     note: 'The point is not visualization. One reasoning pass produces an auditable schedule that humans and agents share.',
+  },
+  {
+    title: 'The system architecture',
+    note: 'Walk the spine left to right: GitHub in, one inference pass, one graph. Then the split — a view for people, MCP for agents. Land on the return arrow: agents report what they discover, so the graph gets better as work happens. Say out loud that nothing is written back to GitHub.',
+  },
+  {
+    title: 'Top-down meets bottom-up.',
+    note: 'Point at the screenshots, keep it short. Left: start from ready work, everything it unblocks lights up. Right: pick a target, the graph orders its prerequisites — agents follow that path.',
   },
   {
     title: 'Watch it become executable.',
@@ -50,10 +62,35 @@ function IssueOpenedIcon() {
   );
 }
 
-function Preview({ index, introStage = 0 }: { index: number; introStage?: number }) {
+function Preview({ index, graphStage = 0 }: { index: number; graphStage?: number }) {
   if (index === 0) {
-    const organized = introStage > 0;
-    const titleStage = introStage === 2;
+    const points = [
+      'Write the demo story',
+      'Deploy before lunch',
+      'Write the house rules',
+      'One issue per agent',
+      'Green tests before main',
+      'Parallelize independent work',
+      'Freeze, rehearse, submit',
+    ];
+    return (
+      <div className={`${styles.previewSlide} ${styles.previewPlaybook}`}>
+        <div className={styles.previewPlaybookHeader}>
+          <svg viewBox="0 0 24 24" aria-hidden="true"><rect x="3.5" y="3.5" width="17" height="17" rx="1.5" /><path d="m7.5 12.2 3 3 6-6.2" /></svg>
+          <strong>THE ONE-PAGE PLAYBOOK</strong>
+        </div>
+        <div className={styles.previewPlaybookRule} />
+        <ol className={styles.previewPlaybookList}>
+          {points.map((point, pointIndex) => <li key={point}><b>{pointIndex + 1}</b><span>{point}</span></li>)}
+        </ol>
+        <p>If there&apos;s one slide to screenshot, this is it.</p>
+      </div>
+    );
+  }
+
+  if (index === 1) {
+    const organized = graphStage > 0;
+    const titleStage = graphStage === 2;
     return (
       <div className={`${styles.previewSlide} ${styles.previewIntro} ${titleStage ? styles.previewTitleStage : ''}`}>
         <div className={`${styles.previewIssues} ${organized ? styles.previewOrganized : ''}`}>
@@ -95,7 +132,7 @@ function Preview({ index, introStage = 0 }: { index: number; introStage?: number
     );
   }
 
-  if (index === 1) {
+  if (index === 2) {
     return (
       <div className={`${styles.previewSlide} ${styles.previewSystem}`}>
         <div className={styles.previewKicker}>ONE PASS. A SHARED SCHEDULE.</div>
@@ -104,6 +141,19 @@ function Preview({ index, introStage = 0 }: { index: number; introStage?: number
           <span>01<br /><b>READ</b></span>
           <span>02<br /><b>PROVE</b></span>
           <span>03<br /><b>SCHEDULE</b></span>
+        </div>
+      </div>
+    );
+  }
+
+  if (index === 4) {
+    return (
+      <div className={`${styles.previewSlide} ${styles.previewSystem}`}>
+        <div className={styles.previewKicker}>TWO WAYS TO READ ONE GRAPH</div>
+        <strong>TOP-DOWN MEETS<br /><em>BOTTOM-UP.</em></strong>
+        <div className={styles.previewSteps}>
+          <span>⇉<br /><b>WAVES</b></span>
+          <span>↳<br /><b>DEPS</b></span>
         </div>
       </div>
     );
@@ -124,7 +174,7 @@ function formatElapsed(value: number) {
 }
 
 export function PitchPresenter() {
-  const [deck, setDeck] = useState<DeckState>({ slide: 0, introStage: 0, blackout: false });
+  const [deck, setDeck] = useState<DeckState>({ slide: 0, graphStage: 0, blackout: false });
   const [connected, setConnected] = useState(false);
   const [running, setRunning] = useState(false);
   const [elapsed, setElapsed] = useState(0);
@@ -141,7 +191,7 @@ export function PitchPresenter() {
       if (!data || data.source !== 'lattice-pitch-deck' || data.type !== 'state') return;
       setDeck({
         slide: data.slide,
-        introStage: Math.max(0, Math.min(2, Number(data.introStage) || 0)),
+        graphStage: data.slide === 1 ? Math.max(0, Math.min(2, Number(data.graphStage) || 0)) : 0,
         blackout: data.blackout,
       });
       setConnected(true);
@@ -157,11 +207,11 @@ export function PitchPresenter() {
   }, []);
 
   const currentSlide = slides[deck.slide];
-  const introSlide = slides[0]!;
-  const introTitleStage = introSlide.titleStage!;
-  const inTitleStage = deck.slide === 0 && deck.introStage === 2;
-  const currentTitle = inTitleStage ? introTitleStage.title : currentSlide.title;
-  const currentNote = inTitleStage ? introTitleStage.note : currentSlide.note;
+  const graphSlide = slides[1]!;
+  const graphTitleStage = graphSlide.titleStage!;
+  const inTitleStage = deck.slide === 1 && deck.graphStage === 2;
+  const currentTitle = inTitleStage ? graphTitleStage.title : currentSlide!.title;
+  const currentNote = inTitleStage ? graphTitleStage.note : currentSlide!.note;
 
   useEffect(() => {
     const noteKey = inTitleStage ? `${deck.slide}-title` : String(deck.slide);
@@ -180,7 +230,7 @@ export function PitchPresenter() {
       source: 'lattice-pitch-presenter',
       type: 'go-to',
       slide,
-      introStage: 0,
+      graphStage: 0,
     });
   };
 
@@ -228,7 +278,15 @@ export function PitchPresenter() {
     return () => window.removeEventListener('keydown', onKeyDown);
   });
 
-  const next = deck.slide < slides.length - 1 ? deck.slide + 1 : null;
+  const next = deck.slide === 1 && deck.graphStage < 2
+    ? {
+        slide: 1,
+        graphStage: deck.graphStage + 1,
+        title: deck.graphStage === 0 ? 'Organize the graph' : graphTitleStage.title,
+      }
+    : deck.slide < slides.length - 1
+      ? { slide: deck.slide + 1, graphStage: 0, title: slides[deck.slide + 1]!.title }
+      : null;
 
   return (
     <main className={styles.presenter}>
@@ -260,15 +318,15 @@ export function PitchPresenter() {
       <section className={styles.workspace}>
         <article className={`${styles.panel} ${styles.currentPanel}`}>
           <header><span>Current slide</span><b>{currentTitle}</b></header>
-          <div className={styles.previewWrap}><Preview index={deck.slide} introStage={deck.introStage} /></div>
+          <div className={styles.previewWrap}><Preview index={deck.slide} graphStage={deck.graphStage} /></div>
           <div className={styles.progress}><span style={{ width: `${((deck.slide + 1) / slides.length) * 100}%` }} /></div>
         </article>
 
         <div className={styles.sideColumn}>
           <article className={`${styles.panel} ${styles.nextPanel}`}>
-            <header><span>Next slide</span><b>{next === null ? 'End of presentation' : slides[next].title}</b></header>
+            <header><span>Next</span><b>{next === null ? 'End of presentation' : next.title}</b></header>
             <div className={styles.previewWrap}>
-              {next === null ? <p className={styles.end}>End of presentation</p> : <Preview index={next} />}
+              {next === null ? <p className={styles.end}>End of presentation</p> : <Preview index={next.slide} graphStage={next.graphStage} />}
             </div>
           </article>
           <article className={`${styles.panel} ${styles.notesPanel}`}>
@@ -279,7 +337,7 @@ export function PitchPresenter() {
       </section>
 
       <nav className={styles.filmstrip} aria-label="Slides">
-        <header><span>All slides</span><b>{String(deck.slide + 1).padStart(2, '0')} / {String(slides.length).padStart(2, '0')}</b></header>
+        <header><span>All slides</span><b>{String(deck.slide + 1).padStart(2, '0')}</b></header>
         <div>
           {slides.map((slide, index) => (
             <button
