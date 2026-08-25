@@ -74,7 +74,7 @@ export function makeAcyclic(edges: Edge[]): { dag: Edge[]; breaks: CycleBreak[] 
 
    The weighting is what makes that safe: `given` edges (already recorded in GitHub) are immutable, so the algorithm can only ever cut something the model inferred. **The worst case is that we mis-order our own suggestions and the next run corrects it.**
 3. **All-immutable cycles.** If every edge in a cycle is `given`, the pipeline cannot cut anything without overwriting human data. It drops the whole component from the *scheduling* graph, marks those issues unschedulable with `reason: 'unresolvable_given_cycle'`, and leaves GitHub untouched. Surface it in the UI as a warning; do not guess.
-4. **Handle GitHub's own rejection.** If `POST blocked_by` returns 422 because GitHub detects a cycle against edges already in the repo, record `github_rejected_cycle` and continue the batch. Don't crash.
+4. **A cycle made entirely of `given` edges is GitHub's problem, not ours.** GitHub itself rejects cycles in `blocked_by`, so this should be impossible — but sub-issue hierarchy can combine with `blocked_by` to produce one. Flag it, exclude it from scheduling, and don't try to fix someone else's data.
 5. **Eades–Lin–Smyth** (compute a vertex order, delete back-edges) is ~40 lines and beats greedy globally. Build greedy first — it's easier to narrate. ELS only if there's spare time.
 
 ---
@@ -158,26 +158,16 @@ Two ready issues with `conflict > 0.4` should not be dispatched to agents in the
 
 ---
 
-## Mermaid emitter — build this early
+## Serialising the graph for the UI
 
-`src/graph/mermaid.ts` is twenty lines and pays for itself three times over:
+`src/graph/serialize.ts` — turn the scheduled graph into the exact payload the graph view consumes: nodes with wave, state, blast radius, critical-path flag and issue URL; edges with type, confidence and source.
 
-1. It gives a working "visualization" checkpoint in hour two, before React Flow exists.
-2. It's the fallback if React Flow layout goes sideways.
-3. **GitHub renders Mermaid natively in issue bodies** — so we can post the current DAG into a tracking issue. *"The graph lives in GitHub too"* is a free extra demo beat.
+Two rules:
 
-```ts
-export function toMermaid(g: Graph): string {
-  const L = ['flowchart LR'];
-  for (const w of g.waves) L.push(`  subgraph W${w.index}["Wave ${w.index}"]\n    direction TB`);
-  // nodes:  N12["#12 Tarjan SCC<br/>unblocks 7"]
-  // classDef critical stroke:#f00,stroke-width:3px
-  for (const e of g.edges) L.push(`  N${e.blockedBy} --> N${e.blocked}`);
-  return L.join('\n');
-}
-```
+- **Send the full graph.** Transitive reduction is a *rendering* choice made in the UI, not something the scheduler or the store ever sees. See [`11-graph-store.md`](11-graph-store.md#transitive-reduction-is-a-view-not-a-stored-form).
+- **Precompute everything the UI needs to draw a node.** The view should never have to join, filter or recompute — it receives a payload and lays it out.
 
----
+> **No Mermaid.** An earlier design emitted a Mermaid `flowchart LR` as an early checkpoint and a fallback. Cut — the deliverable is a real interactive graph (see [`06-workstreams.md`](06-workstreams.md) and the UI issues), and a static diagram is not a smaller version of that, it's a different and worse thing that would have absorbed polish time.
 
 ## Tests
 

@@ -2,11 +2,13 @@
 <!-- labels: lane:inference,size:M -->
 **What**
 
-Orchestrate the whole pipeline: ingest (or cached) → given edges → optional clustering → LLM pass → validate → merge and score → make acyclic → transitive reduction → persist the run → apply to GitHub.
+Orchestrate the whole pipeline: ingest (or cached) → given edges → optional clustering → LLM pass → validate → merge and score → make acyclic → persist the run.
+
+It ends at the store. **Nothing is written to GitHub** — no transitive reduction is persisted either, since that's a rendering choice made in the UI.
 
 It runs two ways from one implementation: `npx tsx scripts/analyze.ts` for development and the demo, and as the job invoked by the triggers in #48.
 
-Stream progress: `1 request · 31 edges · 3 rejected · 1 cycle · 12 written`.
+Stream progress: `1 request · 31 edges · 3 rejected · 1 cycle · 24 blocking`.
 
 **Why it matters**
 
@@ -22,10 +24,11 @@ Every run is recorded in the `runs` table with its trigger, request count, edge 
 
 **Done when**
 
-- [ ] End-to-end run persists a complete `runs` row and applies edges
+- [ ] End-to-end run persists a complete `runs` row and the full graph
+- [ ] Zero GitHub write calls, proven by a test
 - [ ] Cached mode skips the network entirely
 - [ ] A failing cluster degrades to `status: 'partial'` rather than failing the run
 - [ ] Progress output is legible enough to demo
 - [ ] Request count and token usage are reported
 
-**Depends on:** merge and scoring in #15, cycle-breaking in #18, the store in #3, and write-back in #7.
+**Depends on:** merge and scoring in #15, cycle-breaking in #18, and the store in #3.

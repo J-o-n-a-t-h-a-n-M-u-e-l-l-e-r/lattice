@@ -12,12 +12,15 @@ trigger ──► L0 ingest ──► L1 given edges ──► L2 cluster (optio
                                                     │
                                        L4 validate ─┴─ L5 merge & score
                                                     │
-                                   L6 make acyclic + transitive reduction
+                                          L6 make acyclic
+                                                    │
+                                                    ▼
+                                        L7 persist the full graph
                                                     │
                                   ┌─────────────────┴─────────────────┐
                                   ▼                                   ▼
-                          L7 apply to GitHub                  persist to store
-                          (native blocked_by)                 (graph + provenance)
+                            UI reads it                       MCP reads it
+                     (reduced for display only)           (full graph, scheduled)
 ```
 
 ---
@@ -43,7 +46,7 @@ Two sources, both structured data straight from GitHub. **No text parsing.**
 | Source | Edge | Confidence | Notes |
 |---|---|---|---|
 | Existing native `blocked_by` | as recorded | `1.0`, `source: 'given'` | Ground truth. Never overwritten, never removed by the pipeline. |
-| Sub-issue hierarchy | children block the parent's closure | `0.99`, `source: 'sub_issue'` | **`writeBack: false`** |
+| Sub-issue hierarchy | children block the parent's closure | `0.99`, `source: 'sub_issue'` | kept distinct from `blocked_by` |
 
 Sub-issue edges are used by the scheduler but never written into `blocked_by` — GitHub already models hierarchy natively and duplicating it is noise. Saying this out loud in the demo shows we understand GitHub's data model rather than bulldozing it.
 
@@ -172,8 +175,8 @@ export function validateEdges(raw: RawEdge[], cluster: Issue[]) {
       if (tokenOverlap(norm(e.evidence.quote), hay) >= 0.85) e.confidence -= 0.25;
       else { rejected.push({ e, reason: 'fabricated_evidence' }); continue; }
     }
-    // G3 — soft edges never reach GitHub.
-    if (e.type === 'ordering_preference') e.writeBack = false;
+    // G3 — soft edges are stored and drawn, but never block.
+    if (e.type === 'ordering_preference') e.blocking = false;
     // G4 — given edges win. The model cannot contradict what GitHub already records.
     if (given.hasReverse(e)) { rejected.push({ e, reason: 'contradicts_given' }); continue; }
     kept.push(e);
@@ -201,19 +204,19 @@ if (distinctLayers >= 2) score = min(0.99, score + 0.05);
 if (reverseExists)       { score = max(score, reverse.score) - 0.15; flag('contested'); }
 ```
 
-### The write threshold — the policy that replaced the review queue
+### The blocking threshold
 
-With no human gate, confidence bands become **automatic policy**:
+**Every edge is stored, whatever its score.** The threshold decides only whether an edge is treated as *blocking* when the schedule is computed:
 
 | Score | What happens |
 |---|---|
-| `>= LATTICE_WRITE_THRESHOLD` (default **0.80**) | Written to GitHub as a real `blocked_by` edge |
-| below it | Kept in the store and used by the scheduler, **not** written to GitHub |
-| `contested` | Never written, whatever the score |
+| `>= LATTICE_BLOCK_THRESHOLD` (default **0.80**) | Treated as a real blocker — constrains waves, critical path and the ready set |
+| below it | Stored and displayed, but does not block anything |
+| `contested` | Stored, never blocking |
 
-That split is deliberate and worth explaining out loud. The graph we *schedule* against can afford to be speculative — a wrong soft edge only mis-orders our own suggestions, and the next run corrects it. A `blocked_by` write is visible to every human and every tool touching the repo, so it holds a higher bar.
+Keeping the low-confidence edges rather than discarding them matters: they are visible in the UI as weak signals, they feed the quality metrics against the gold set, and a later run with better evidence can promote one without having to rediscover it.
 
-The threshold is one env var. `0.95` is the conservative deployment; `1.0` writes nothing and makes Lattice read-only against GitHub while still scheduling internally.
+Nothing here is destructive, which is what makes an unsupervised threshold safe to get slightly wrong. A bad edge above the line mis-orders our own suggestions until the next run; it does not modify anyone's repo.
 
 ---
 
@@ -221,20 +224,33 @@ The threshold is one env var. `0.95` is the conservative deployment; `1.0` write
 
 Fully automatic — see [`03-graph-scheduling.md`](03-graph-scheduling.md#cycle-detection-and-breaking). The lowest-weight edge on each cycle is dropped, `given` edges are never touched, and every break is recorded with what was cut and what the alternatives were.
 
-Then **transitive reduction**: if A→B, B→C and A→C, drop A→C. Halves the visual clutter and the number of GitHub writes.
+Cycle breaking **is** persisted: a cut edge is genuinely removed from the graph, because everything downstream is undefined on a cyclic graph.
+
+> ### Transitive reduction is a view, not a stored form
+>
+> If A→B, B→C and A→C, then A→C is redundant *for drawing purposes* — it adds an arrow that clutters the picture and tells the reader nothing new.
+>
+> **Compute it in the UI at render time. Do not store the reduced graph, and do not let the scheduler see it.**
+>
+> The reduction is lossy. A→C carries its own rationale, evidence, confidence and provenance, and it may well have come from a different source than the two-hop path. Persisting the reduced form would silently destroy that, and `explain_dependency` on A→C would then have nothing to return.
+>
+> It is also cheap enough that there's no reason to precompute — one pass over the edge list. Treat it exactly like a layout choice, alongside which nodes are visible and how the columns are laid out.
 
 ---
 
-## L7 · Apply
+## L7 · Persist
 
-Automatic, idempotent, rate-limited. Diff against what GitHub already has, write only the difference, space writes ~1.2s apart. See [`09-github-api-notes.md`](09-github-api-notes.md#write-path-shape).
+The full graph goes into the store: every edge the pipeline has an opinion about, above and below the threshold, with its type, confidence, source, rationale and evidence — plus the rejections, the cycle breaks, and the derived schedule. See [`11-graph-store.md`](11-graph-store.md).
 
-Two rules that keep an automatic writer from becoming a vandal:
-
-- **Never delete a `given` edge.** A human or another tool put it there. The pipeline only adds to that set.
-- **Prune its own stale edges.** An edge Lattice wrote on a previous run that is no longer inferred must be removed, or the graph accretes garbage forever. Track authorship in the store so we know which edges are ours to remove — this is why the store records who wrote each edge.
-
-> **No receipt comments.** An earlier design posted a comment on each blocked issue explaining the edge. **Cut** — it's noise on every issue, it doesn't survive re-runs cleanly, and it turns a quiet background process into a notification spammer. The reasoning lives in the store and is retrievable through `explain_dependency` and the UI.
+> ### Lattice does not write to GitHub
+>
+> **The graph is stored in the database only.** No `blocked_by` writes, no dependency deletions, no comments. GitHub is a **read source**, not a write target.
+>
+> That makes the whole system **non-destructive by construction**, which is what earns it the right to run unsupervised. There is no automatic writer that could corrupt a shared repo, no pruning logic that could delete a dependency a human recorded, no secondary rate limit to dance around, and no write permissions to request. The worst a bad inference can do is mis-order our own suggestions until the next run.
+>
+> GitHub's native `blocked_by` and sub-issue hierarchy are still read every run as `given` edges — ground truth the model may not contradict (see [L1](#l1--given-edges--deterministic-api-sourced)). Anyone who wants to overrule Lattice edits `blocked_by` on GitHub and the next run treats it as fact. **That is the write path: humans write, Lattice reads.**
+>
+> **What this costs, stated plainly:** the graph only exists where Lattice is running. It is not visible in GitHub's own UI, and other tools don't inherit it. The mitigation is that everything is genuinely retrievable — a deployed interactive graph anyone can open and click into, and the `explain_dependency` MCP tool for agents.
 
 ---
 

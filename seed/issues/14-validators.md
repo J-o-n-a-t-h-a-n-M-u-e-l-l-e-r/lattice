@@ -6,7 +6,7 @@
 
 1. **ID whitelist** — the model may only reference issues it was shown
 2. **Evidence verification** — the quote must be a real substring of the cited issue, with a fuzzy second chance at ≥0.85 token overlap and a confidence haircut
-3. **Soft-edge suppression** — `ordering_preference` never gets `writeBack: true`
+3. **Soft-edge suppression** — `ordering_preference` is never marked `blocking`
 4. **Deterministic precedence** — the model cannot flip an explicit "blocked by" a human wrote
 5. **Density cap** — keep the top 1.5×|cluster| by confidence
 
@@ -16,7 +16,7 @@ These guards sit *after* the Zod schema validation in #13. Zod catches malformed
 
 **Why it matters**
 
-This file is what makes LLM output trustworthy enough to write into GitHub. Without guard 2 in particular, the human review gate becomes theatre — a reviewer skimming plausible rationales with no way to check them.
+This file is what makes LLM output trustworthy enough to schedule real work against. Without guard 2 in particular, the evidence review gate becomes theatre — a reviewer skimming plausible rationales with no way to check them.
 
 The rejection counts are also a feature, not an embarrassment. A line like `31 edges proposed · 3 rejected (1 fabricated evidence, 2 density cap) · 0 hallucinated IDs` is a credibility signal no other team will have. Surface it in the UI and the README.
 

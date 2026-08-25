@@ -15,16 +15,28 @@ So: **the pipeline writes, everything else reads.**
         (applied edges)     └───────────┘
 ```
 
-## What is truth, and what is derived
+## GitHub is a data source, not a data store
 
-This distinction matters and is easy to blur:
+**Nothing is ever written back.** The store holds the complete graph; GitHub supplies the raw material.
 
-| | Lives in | Why |
+| | Lives in | Direction |
 |---|---|---|
-| **Applied `blocked_by` edges** | **GitHub** | Still the source of truth for edges we committed. Delete Lattice and they remain. Every other tool sees them. |
-| Everything else — reasoning, confidence, evidence, rejected edges, sub-threshold edges, cycle breaks, waves, critical path, blast radius, run history | **The store** | GitHub has nowhere to put any of it. |
+| Issues, native `blocked_by`, sub-issue hierarchy | GitHub | **read only, every run** |
+| The full graph — every edge with type, confidence, evidence and provenance — plus rejections, cycle breaks, the derived schedule, leases, run history, model cache | The store | read/write |
 
-The store is **not** a second copy of GitHub's dependency data pretending to be authoritative. It is the layer holding the ~90% of the computation GitHub cannot represent, plus a cache of the parts it can.
+Native `blocked_by` read from GitHub becomes a `given` edge: ground truth the model may not contradict, and the mechanism by which a human overrules Lattice. **Humans write, Lattice reads.**
+
+### Store the full graph, always
+
+Every edge the pipeline forms an opinion about is persisted — above and below the blocking threshold, contested ones included. Low-confidence edges are not discarded because they are still useful: visible in the UI as weak signals, scored against the gold set for quality metrics, and promotable by a later run with better evidence without having to be rediscovered.
+
+The one thing that *is* destructive is cycle breaking, and it has to be: a cut edge is genuinely removed, because everything downstream is undefined on a cyclic graph. Every cut is recorded in `cycle_breaks` with the alternatives.
+
+### Transitive reduction is a view, not a stored form
+
+If A→B, B→C and A→C, the direct edge is redundant *for drawing*. Compute that in the UI at render time; **never store the reduced graph and never let the scheduler see it.**
+
+The reduction is lossy — A→C carries its own rationale, evidence and provenance, possibly from a different source than the two-hop path. Persisting the reduced form would destroy that, and `explain_dependency` on A→C would have nothing to return. It's one pass over the edge list, so there's nothing to gain by precomputing it. Treat it like a layout choice.
 
 ## Recommended: Postgres + Drizzle
 
@@ -57,8 +69,8 @@ edges (
   repo, blocked, blocked_by,            -- composite PK
   type, confidence, source, rationale,
   evidence_issue, evidence_quote,
-  written_to_github  boolean,           -- did WE write it
-  authored_by        text,              -- 'lattice' | 'given' — governs pruning
+  blocking           boolean,           -- score >= threshold: constrains the schedule
+  source             text,              -- 'given' | 'sub_issue' | 'llm' | 'agent_reported'
   pinned             boolean DEFAULT false,   -- human nudge: never remove
   suppressed         boolean DEFAULT false,   -- human nudge: never propose again
   first_seen_run, last_seen_run
@@ -81,7 +93,9 @@ schedule (
 llm_cache (key PRIMARY KEY, model, response_json, created_at)
 ```
 
-`authored_by` is what makes automatic pruning safe. Lattice may remove edges it wrote and no longer infers; it must never touch a `given` edge someone else created. Without this column an automatic writer eventually becomes a vandal.
+`source` distinguishes what came from GitHub (`given`, `sub_issue`) from what was inferred. `given` edges are immutable: never re-scored, never cut during cycle breaking, and they win over any inference that contradicts them. `blocking` is the materialised threshold decision, so the scheduler doesn't re-evaluate it on every read.
+
+There is no `authored_by` column and no pruning logic, because nothing is ever written to GitHub. Each run simply supersedes the previous graph in the store.
 
 ## Caching, in three layers
 
@@ -103,7 +117,7 @@ The store is the read API for the whole system:
 |---|---|
 | Graph view | full node + edge set for a repo, latest run |
 | `list_ready_work` | `schedule` rows where `ready`, ordered by blast radius |
-| `explain_dependency` | one `edges` row with rationale and evidence — this is what replaced receipt comments |
+| `explain_dependency` | one `edges` row with rationale and evidence — the only place the reasoning exists |
 | Dispatch | ready set plus conflict scores |
 | Quality metrics | `runs` + `rejections` joined against the gold set |
 
@@ -115,7 +129,7 @@ There is no approval gate, and none is planned. Humans influence the graph by **
 
 - **`pinned`** — an edge a human asserted. The pipeline never removes it and cycle-breaking never cuts it.
 - **`suppressed`** — an edge a human rejected. Never proposed again, never written.
-- Editing `blocked_by` directly on GitHub also works and is picked up as a `given` edge on the next run. This is the zero-UI nudge path, and it's free.
+- Editing `blocked_by` directly on GitHub is picked up as a `given` edge on the next run and is immutable thereafter. This is the zero-UI nudge path, it's free, and it is the *only* direction data flows toward GitHub — by a human, never by Lattice.
 
 Both columns are two booleans and a filter. Add them to the schema now even though the UI for them can wait — retrofitting a column that changes pruning semantics is much worse than carrying two unused flags.
 

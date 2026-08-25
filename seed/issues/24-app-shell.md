@@ -2,7 +2,7 @@
 <!-- labels: lane:ui,size:S -->
 **What**
 
-Two routes — `/` for the graph, `/runs` for run history — shared layout, navigation, and a single deliberate visual pass: typography, spacing, a restrained palette, and states for loading, empty and error.
+Two routes — `/` for the interactive graph, `/runs` for run history — shared layout, navigation, and a single deliberate visual pass: typography, spacing, a restrained palette, and states for loading, empty and error.
 
 **Why it matters**
 

@@ -2,11 +2,11 @@
 <!-- labels: lane:ui,size:L -->
 **What**
 
-Run history, and per run: trigger, duration, request count, edges proposed / kept / written / pruned, and three expandable sections.
+Run history, and per run: trigger, duration, request count, edges proposed / kept / blocking, and three expandable sections.
 
 - **Rejections** — what the validators threw out, grouped by reason, with the offending edge and its rationale
 - **Cycles** — each cycle as a readable path (`#12 → #19 → #23 → #12`), which edge was cut, what the alternatives were
-- **Below threshold** — edges that schedule but were not written to GitHub
+- **Below threshold** — edges stored and drawn, but not treated as blockers
 
 Read-only. The pipeline already decided.
 

@@ -2,7 +2,7 @@
 <!-- labels: lane:foundation,size:S -->
 **What**
 
-A realistic, hand-authored fixture behind the `GraphStore` interface: roughly 20 issues, ~15 edges spanning all four dependency types, confidence values from 0.3 to 0.98, at least one contested pair, some edges below the write threshold, a few validator rejections, and **one cycle the pipeline broke** so the run view has something to render.
+A realistic, hand-authored fixture behind the `GraphStore` interface: roughly 20 issues, ~15 edges spanning all four dependency types, confidence values from 0.3 to 0.98, at least one contested pair, some edges below the blocking threshold, a few validator rejections, and **one cycle the pipeline broke** so the run view has something to render.
 
 Commit it. It is not throwaway.
 
@@ -24,7 +24,7 @@ Make it *realistic*, including the ugly parts. A fixture where every edge is con
 - [ ] Contains all four `DependencyType` values
 - [ ] Contains a broken cycle with victim and alternatives recorded
 - [ ] Contains rejections across at least two reasons
-- [ ] Contains sub-threshold edges that schedule but were never written
+- [ ] Contains sub-threshold edges that are drawn but constrain nothing
 - [ ] The UI renders it without special-casing
 
 **Depends on:** the types contract in #1 and the store interface in #3. Nothing else — that's the point of it.

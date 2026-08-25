@@ -8,6 +8,6 @@ The original plan had every inferred edge reviewed and approved by a human befor
 
 What replaced it:
 
-- **The write threshold** (`LATTICE_WRITE_THRESHOLD`, default 0.80) — high-confidence edges are written to GitHub, speculative ones stay in the store and only schedule internally. Policy instead of a queue. See `docs/02-inference-pipeline.md#l5-merge--scoring`.
+- **The blocking threshold** (`LATTICE_BLOCK_THRESHOLD`, default 0.80) — high-confidence edges constrain the schedule, lower-confidence ones are stored and shown but block nothing. Policy instead of a queue. Speculative ones stay in the store and only schedule internally. Policy instead of a queue. See `docs/02-inference-pipeline.md#l5-merge--scoring`.
 - **`/runs`** (#49) — the accountability surface. What each run did, what the validators rejected and why, which cycles were cut, what fell below threshold. Read-only.
 - **Human nudges** (#50, low priority) — pin and suppress, applied *after* the fact rather than as a gate.

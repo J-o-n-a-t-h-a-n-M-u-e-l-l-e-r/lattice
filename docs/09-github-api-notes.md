@@ -8,60 +8,26 @@ Verified facts and the gotchas that will silently produce wrong behaviour. **Rea
 
 API version header: `X-GitHub-Api-Version: 2026-03-10`
 
-| Method | Path |
-|---|---|
-| `GET` | `/repos/{owner}/{repo}/issues/{issue_number}/dependencies/blocked_by` |
-| `GET` | `/repos/{owner}/{repo}/issues/{issue_number}/dependencies/blocking` |
-| `POST` | `/repos/{owner}/{repo}/issues/{issue_number}/dependencies/blocked_by` |
-| `DELETE` | `/repos/{owner}/{repo}/issues/{issue_number}/dependencies/blocked_by/{issue_id}` |
+> ### We only ever GET these
+>
+> **Lattice does not write to GitHub.** The `POST` and `DELETE` endpoints below are documented for completeness and because it is useful to know what we deliberately don't do — but no code in this repo calls them. GitHub is a data source; the graph lives in the store.
 
-### ⚠️ The gotcha that will cost you an hour
+| Method | Path | Used |
+|---|---|---|
+| `GET` | `/repos/{owner}/{repo}/issues/{issue_number}/dependencies/blocked_by` | ✅ every run |
+| `GET` | `/repos/{owner}/{repo}/issues/{issue_number}/dependencies/blocking` | ✅ |
+| `POST` | `.../dependencies/blocked_by` | ❌ never |
+| `DELETE` | `.../dependencies/blocked_by/{issue_id}` | ❌ never |
 
-`POST` body is `{ "issue_id": <integer> }` — and that is the **global database ID**, *not* the `#number` you see in the UI.
+### Reading dependencies
 
-```
-❌ { "issue_id": 12 }            // the #number. Silently wrong or 404.
-✅ { "issue_id": 3847261953 }    // databaseId from the GraphQL ingest
-```
+`GET .../blocked_by` per issue, batched at concurrency 5. Results become `given` edges: confidence 1.0, immutable, and the model may not contradict them. This is also the mechanism by which a human overrules Lattice — edit `blocked_by` on GitHub and the next run treats it as fact.
 
-Fetch `databaseId` alongside `number` during L0 ingest and carry both on every node. Conflating them is the single most likely silent bug in the write path.
+Reads are subject to the ordinary hourly rate limit, which is generous. The **secondary** rate limit that makes the write endpoints awkward doesn't apply to us, because we don't write.
 
-### Rate limiting
+### Still fetch `databaseId`
 
-POST and DELETE here are subject to **secondary** rate limiting — the "creating content too quickly" kind, which is not the same as your hourly quota and is not visible in `X-RateLimit-Remaining`.
-
-Space writes ~1.2s apart. On 403/429, back off and retry. Do not burst 30 edges during a live demo.
-
-### Write path shape
-
-```ts
-const existing = await getBlockedBy(number);          // diff first — never duplicate
-const toWrite = edges.filter(e => e.writeBack && e.score >= WRITE_THRESHOLD);
-const toAdd = toWrite.filter(e => !existing.has(e.blockedByDatabaseId));
-// and prune edges WE wrote that are no longer inferred — never `given` ones
-const toRemove = existing.filter(e => e.authoredBy === 'lattice' && !inferred.has(e));
-
-for (const e of toAdd) {
-  await sleep(1200);
-  try {
-    await octokit.request(
-      'POST /repos/{owner}/{repo}/issues/{issue_number}/dependencies/blocked_by',
-      { ...ctx, issue_number: e.blocked,
-        issue_id: e.blockedByDatabaseId,
-        headers: { 'X-GitHub-Api-Version': '2026-03-10' } });
-  } catch (err) {
-    if (err.status === 403 || err.status === 429) { await backoff(err); retry(); }
-    else if (err.status === 422) record(e, 'github_rejected_maybe_cycle');
-    else throw err;
-  }
-}
-```
-
-Idempotent (diffs first) and rate-limit aware. Plus a `--dry-run` that prints every HTTP call it *would* make.
-
-**422 usually means GitHub detected a cycle** against edges already in the repo. Record it as `github_rejected_cycle` and continue the batch — don't crash.
-
-**Pruning is as important as writing.** An automatic writer that only ever adds will accrete stale edges forever. Remove edges we authored that are no longer inferred; never touch a `given` edge someone else created. The store's `authored_by` column is what makes that distinction possible.
+Even though we never POST, fetch `databaseId` alongside `number` during ingest — it's the stable identifier across renames and re-numbering, and it costs nothing to select in the GraphQL query we already run. `number` is what humans see; `databaseId` is what identifies the row.
 
 ---
 
@@ -69,7 +35,7 @@ Idempotent (diffs first) and rate-limit aware. Plus a `--dry-run` that prints ev
 
 GraphQL, with header `GraphQL-Features: sub_issues`. Gives `parent` and `subIssues` on an issue.
 
-We **read** these but never write hierarchy into `blocked_by` — GitHub already models it. See `writeBack: false` in [`02-inference-pipeline.md`](02-inference-pipeline.md).
+Read-only, like everything else. Hierarchy is kept distinct from `blocked_by` in the store — they are different relations.
 
 ---
 

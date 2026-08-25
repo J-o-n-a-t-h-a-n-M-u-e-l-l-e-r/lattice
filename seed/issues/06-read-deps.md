@@ -11,8 +11,8 @@ Two additions to the ingest layer:
 
 Two distinct reasons, and both matter:
 
-- **Idempotency.** The write-back path must diff against what already exists or it will create duplicate edges. This is where that knowledge comes from.
-- **Free high-confidence edges.** Sub-issue hierarchy gives us children-block-parent at confidence 0.99 with no model involved. But these are flagged `writeBack: false` — GitHub already models hierarchy natively and duplicating it into `blocked_by` is noise. We *use* it in the scheduler; we don't write it back.
+- **Ground truth, and the human override path.** Native `blocked_by` becomes a `given` edge: confidence 1.0, immutable, never cut during cycle breaking, and the model may not contradict it. Since Lattice never writes to GitHub, this is the *only* way information flows toward the repo — a human edits `blocked_by`, and the next run treats it as fact.
+- **Free high-confidence edges.** Sub-issue hierarchy gives us children-block-parent at confidence 0.99 with no model involved. Keep hierarchy distinct from `blocked_by` in the store — they are different relations and conflating them loses information.
 
 Feeding already-known dependencies into the LLM prompt as ground-truth context also stops the model re-proposing edges that already exist.
 
@@ -23,7 +23,7 @@ Feeding already-known dependencies into the LLM prompt as ground-truth context a
 **Done when**
 
 - [ ] Existing `blocked_by` edges land in `raw.json` as `source: 'given'`, confidence 1.0
-- [ ] Sub-issue edges are emitted with `writeBack: false`
+- [ ] Sub-issue edges are marked as hierarchy, not conflated with `blocked_by`
 - [ ] Concurrency is capped; a 30-issue repo doesn't trip rate limits
 
 **Depends on:** the bulk ingest in #5 — this extends it rather than replacing it.

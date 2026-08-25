@@ -7,7 +7,7 @@ Five people, five lanes. The lanes are chosen so that **the seams between them a
 | # | Lane | Owns | Meets other lanes at |
 |---|---|---|---|
 | **F** | Foundation | scaffold, `types.ts`, **the store**, fixtures | `EdgeCandidate` + the store interface — *everyone* |
-| **G** | GitHub I/O | `src/lib/github/**` | store (out), written edges (in) |
+| **G** | GitHub I/O | `src/lib/github/**` | **read only** — issues + deps in, store out |
 | **I** | Inference | `src/lib/infer/**`, `scripts/analyze.ts`, triggers | store in, store out |
 | **S** | Graph & scheduling | `src/graph/**` | pure functions; edges in, schedule out |
 | **U** | Web UI | `app/**` | reads the store |
@@ -19,11 +19,11 @@ Six labels, five people — **F is shared setup done together in hour one**, the
 
 | Person | Lane | Start with | Then, in order |
 |---|---|---|---|
-| 1 | **G** — GitHub I/O | #5 ingest | #6 → #7 → #48 → #9 |
+| 1 | **G** — GitHub I/O | #5 ingest | #6 → #37 → #38 → #39 |
 | 2 | **I** — Inference | #11 symbol index | #12 → #13 → #14 → #15 → #16 → #46 |
 | 3 | **S** — Graph & scheduling | #17 Tarjan | #18 → #19 → #20 → #21 → #22 → #23 |
-| 4 | **U** — Web UI | #4 fixture *(first, ~30 min)* | #24 → #25 → #49 → #26 → #50 |
-| 5 | **M** — MCP & store | #3 store | #47 → #30 → #36 → #32 → #31 → #33 → #34/#35 → #37–40 |
+| 4 | **U** — Web UI | #4 fixture *(first, ~30 min)* | #25 → #26 → #51 deploy → #49 → #50 |
+| 5 | **M** — MCP & store | #3 store | #47 → #30 → #36 → #32 → #31 → #33 → #34/#35 → #40 |
 
 Hour 0–1 is everyone together on **#1** (types contract) and **#2** (scaffold). #1 blocks all five lanes, so settle it at a whiteboard rather than assigning it.
 
@@ -31,7 +31,7 @@ Hour 0–1 is everyone together on **#1** (types contract) and **#2** (scaffold)
 
 **#4 before anything else for person 4.** A 30-minute hand-written fixture is what stops persons 4 and 5 idling for half a day.
 
-Closed as superseded: **#8** receipt comments, **#10** regex extractors, **#27** review queue, **#28** cycle-resolution UI, **#29** approval wiring. Each carries a tombstone explaining what replaced it.
+Closed as superseded: **#7** write-back, **#8** receipt comments, **#9** write dry-run, **#10** regex extractors, **#22** Mermaid, **#27** review queue, **#28** cycle-resolution UI, **#29** approval wiring, **#48** pruning. Each carries a tombstone explaining what replaced it.
 
 ## Why this parallelizes cleanly
 
@@ -48,14 +48,14 @@ The graph lane (S) is pure — no I/O — so it never conflicts with anyone and 
 ```
 Hour 0-1   EVERYONE:  repo, scaffold, types.ts, seed the dogfood issues
            ─────────────────────────────────────────────────────────────
-Hour 1+    G: ingest ──────────► write-back
+Hour 1+    G: ingest ──────────► deps + hierarchy ──► Copilot dispatch
            I: deterministic ───► candidates ──► LLM ──► validate ──► merge
            S: SCC ────────────► acyclic ────► schedule ──► blast radius
            U: shell ──────────► graph view ──► run history
            M: mcp route ──────► tools ──────► copilot dispatch
 ```
 
-The first checkpoint that matters: **`npx tsx scripts/analyze.ts --no-llm` prints a Mermaid DAG of the explicit dependencies.** That is demoable on its own and it arrives around hour three.
+The first checkpoint that matters: **the graph view renders the fixture, and `npx tsx scripts/analyze.ts` produces a real run in the store.** Those two meeting is the moment the project exists, and it arrives around hour three.
 
 ## Collision-avoidance rules
 
@@ -68,8 +68,8 @@ Five people plus several agents in one repo. These are not suggestions:
 
 ## Stop-loss
 
-**If it is end of Day 1 and write-back doesn't work, freeze the scope.**
+**If it is end of Day 1 and the MCP or Copilot legs haven't started, freeze the scope.**
 
-Ingest → infer → review → graph, with Mermaid posted to a tracking issue, is a complete, honest, submittable project. Spend Day 2 on the README and the demo, not on opening a new leg.
+Ingest → infer → graph, deployed and interactive, is a complete, honest, submittable project. Spend Day 2 on polish, the README and the demo, not on opening a new leg.
 
 The judging criteria say plainly: *"A half-built thing with clear thinking beats a polished thing with none."* Believe them.

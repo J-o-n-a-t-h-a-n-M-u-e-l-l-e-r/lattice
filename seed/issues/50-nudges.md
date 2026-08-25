@@ -4,7 +4,7 @@
 
 Two row actions on an edge:
 
-- **Pin** — a human asserts this edge. Never pruned, never cut during cycle breaking, treated as `IMMUTABLE`.
+- **Pin** — a human asserts this edge. Always blocking, never cut during cycle breaking, treated as `IMMUTABLE`.
 - **Suppress** — a human rejects it. Never proposed again, never written.
 
 Both are single boolean columns already present in the schema (#3).
@@ -25,7 +25,7 @@ That's also the honest framing for a judge asking where the human is: control wi
 
 **Done when**
 
-- [ ] Pinned edges survive pruning and are never cut in a cycle
+- [ ] Pinned edges are always blocking and never cut in a cycle
 - [ ] Suppressed edges are never re-proposed or written
 - [ ] Both are visible in the UI as a distinct state
 - [ ] Neither blocks a run from completing

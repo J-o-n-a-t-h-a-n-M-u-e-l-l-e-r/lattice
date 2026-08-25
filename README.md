@@ -2,9 +2,11 @@
 
 **A backlog is a flat list pretending to be a plan.**
 
-Lattice infers the dependency graph hidden in your GitHub issues, writes it into GitHub's *native* issue-dependency model, and serves the resulting schedule to coding agents over MCP — so one expensive reasoning pass becomes the scheduler for every cheap agent run after it.
+Lattice infers the dependency graph hidden in your GitHub issues and serves the resulting schedule to coding agents over MCP — so one expensive reasoning pass becomes the scheduler for every cheap agent run after it.
 
 It runs on its own. Issue events and a schedule trigger it; nobody clicks anything.
+
+**It never writes to GitHub.** Issues are a data source, not a data store.
 
 > Microsoft Hackathon 2026 · Challenge: *Collaboration using GitHub Planning & Tracking Tools in the Agentic Age*
 
@@ -27,23 +29,29 @@ So: **the schema exists, the data doesn't, and the view doesn't.**
 ## What Lattice does
 
 ```
-issue events ──► inference ──► edges (type · confidence · verbatim evidence)
-   / schedule                          │
-                              validate · score · make acyclic
-                                       │
-                       ┌───────────────┴───────────────┐
-                       ▼                               ▼
-           native GitHub blocked_by              the store
-           (edges above the threshold)     (reasoning · schedule · cache)
-                                                       │
-                                       ┌───────────────┴───────────────┐
-                                       ▼                               ▼
-                                 graph view                      MCP server
-                                 (human: what's next)      (agent: what's next,
-                                                            what's parallel, claim)
+  GitHub (read only)
+  issues · blocked_by · sub-issues
+             │
+             ▼                    triggered by issue events / schedule
+        inference ──► edges (type · confidence · verbatim evidence)
+                          │
+                 validate · score · make acyclic
+                          │
+                          ▼
+                     the store  ◄── the full graph lives here
+                          │
+          ┌───────────────┴───────────────┐
+          ▼                               ▼
+    graph view                      MCP server
+    (human: what's next)      (agent: what's next,
+                               what's parallel, claim)
 ```
 
-The one architectural commitment: **committed edges live in GitHub, not in Lattice.** Delete this tool and the value stays, visible to every other tool touching the repo. The store holds what GitHub has nowhere to put — rationale, evidence, confidence, the rejected and sub-threshold edges, the derived schedule, and the model response cache.
+The one architectural commitment: **GitHub is a data source, not a data store.** Lattice reads issues, native `blocked_by` and sub-issue hierarchy every run, and writes nothing back — no dependencies, no comments, no labels.
+
+That makes the system **non-destructive by construction**, which is what earns it the right to run unsupervised. There is no automatic writer that could corrupt a shared repo and no pruning logic that could delete a dependency someone recorded by hand. The worst a bad inference can do is mis-order our own suggestions until the next run corrects it.
+
+The write path runs the other way: **humans write, Lattice reads.** Anyone who wants to overrule the graph edits `blocked_by` on GitHub, and the next run treats it as ground truth the model may not contradict.
 
 ## Why this answers the challenge
 

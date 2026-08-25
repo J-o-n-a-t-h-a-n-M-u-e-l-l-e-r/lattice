@@ -6,7 +6,7 @@ Three tools, signatures in `docs/04-mcp-surface.md`:
 
 - `list_ready_work({ limit, area, exclude_claimed })` — unblocked issues ranked by blast radius, each with `unblocks`, `conflict_risk` and a `reason`
 - `get_issue_context({ number })` — blockers with state, dependents with *what they need from you*, recommended base ref, likely files
-- `explain_dependency({ blocked, blocked_by })` — type, confidence, source, rationale, evidence, which run first saw it, whether it was written to GitHub
+- `explain_dependency({ blocked, blocked_by })` — type, confidence, source, rationale, evidence, which run first saw it, and whether it is blocking
 
 **Why it matters**
 
@@ -14,7 +14,7 @@ This is the amortisation argument made concrete: instead of every agent run re-d
 
 **Every read is served from the store.** No MCP tool triggers inference, calls GitHub, or recomputes a topological sort — five agents polling `list_ready_work` should cost five cache hits. See `docs/11-graph-store.md`.
 
-`explain_dependency` carries extra weight now: **it is what replaced receipt comments.** Rather than a comment on every issue explaining its blockers, the reasoning is retrievable on demand — by an agent, or by the UI.
+`explain_dependency` carries extra weight now: **it is the only place the reasoning exists.** Lattice never writes to GitHub, so an inferred edge has no representation anywhere else — this tool and the node panel are how anyone, human or agent, checks why an edge is there.
 
 `reason` must be a human sentence — "ready · critical path · unblocks 7" — not a score. The agent can put it straight into a PR description.
 

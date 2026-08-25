@@ -21,7 +21,7 @@ Debouncing is not a nicety. Without it, closing five issues in a row fires five 
 
 Incremental matters for the same reason. Graph maths is microseconds; the model call is the scarce resource. If nothing textual changed, don't spend one.
 
-Guard against overlapping runs — a run in flight should cause the next trigger to coalesce, not to start a second concurrent write to GitHub.
+Guard against overlapping runs — a run in flight should cause the next trigger to coalesce, not to start a second concurrent write to the store.
 
 **Scope**
 

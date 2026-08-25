@@ -26,10 +26,11 @@ The criterion asks for *"sensible human checkpoints"*. **Lattice has no approval
 
 The argument to make:
 
-- **The checkpoints are structural, not procedural.** Guards, a write threshold, immutable `given` edges, and prune-only-what-we-authored are all constraints on what the system may do unsupervised. That is a design that *earns* autonomy rather than one that skipped the question.
-- **Two tiers of commitment.** Speculative edges schedule but never reach GitHub; only high-confidence ones get written. The blast radius of being wrong is bounded and self-correcting on the next run.
+- **It is non-destructive by construction.** Lattice never writes to GitHub — not dependencies, not comments, not labels. There is no action it can take that a human has to undo. That is what earns it the right to run unsupervised, and it is a much stronger answer than a checkbox someone clicks 25 times.
+- **The guards are structural.** Verbatim-evidence validation, a blocking threshold, immutable `given` edges. Constraints on what the system may conclude, rather than a gate in front of what it does.
 - **Humans correct rather than approve.** Pin, suppress, or edit `blocked_by` directly on GitHub. Control without a bottleneck.
-- **Agents feed the graph.** `report_dependency` means the system gets more accurate as work happens — which is a more interesting answer to "collaboration with non-human teammates" than a human clicking approve 25 times.
+- **Agents feed the graph.** `report_dependency` means the system gets more accurate as work happens — a more interesting answer to "collaboration with non-human teammates" than an approval queue.
+- **Humans still hold the pen.** Editing `blocked_by` on GitHub is treated as immutable ground truth the model may not contradict. Data flows toward GitHub only when a human puts it there.
 
 Be ready to say this in one breath if a judge asks. It is a defensible position, but only if it's argued rather than glossed over.
 
@@ -67,4 +68,5 @@ Also on the board: **#9 "[Idea] AI Sprint Planner"** (team "Claude plan") — a 
 ## What we deliberately are not building
 
 - **File-level conflict detection as a first-class feature.** Mapping issues to the code they'd touch and flagging pairs that would collide is genuinely the strongest differentiator available — and genuinely a second project. We keep a lightweight `conflict_risk` score (it falls out of the path/symbol index we build anyway) and use it only for agent dispatch, not as a headline.
-- Projects v2 custom-field writing, auth/multi-tenancy, any persistence beyond JSON files.
+- **Writing anything back to GitHub.** Deliberate, not a shortcut — see above.
+- Projects v2 custom-field writing, auth/multi-tenancy.

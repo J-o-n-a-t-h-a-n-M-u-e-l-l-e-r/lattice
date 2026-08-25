@@ -34,20 +34,20 @@ lattice/
   src/lib/
     github/
       fetch.ts       # GraphQL bulk ingest + REST existing-deps
-      write.ts       # blocked_by POST/DELETE, rate-limited, idempotent, pruning
+                     # (no write module — GitHub is read-only)
       copilot.ts     # suggestedActors + replaceActorsForAssignable
     infer/
       given.ts           # L1 native blocked_by + sub-issue hierarchy (no parsing)
       candidates.ts      # L2 optional clustering + path/symbol index
       llm.ts             # L3 OpenRouter edge extraction
       validate.ts        # L4 guards — safety-critical, nothing downstream catches
-      merge.ts           # L5 scoring + write threshold
+      merge.ts           # L5 scoring + blocking threshold
   src/graph/
     build.ts         # adjacency structures
     scc.ts           # Tarjan
     acyclic.ts       # weighted greedy feedback-arc-set + Kahn invariant
     schedule.ts      # waves, critical path, slack, blast radius
-    mermaid.ts       # DAG -> mermaid string
+    serialize.ts     # graph -> the payload the UI renders (full graph, not reduced)
   app/
     page.tsx                        # graph view (React Flow)
     runs/page.tsx                   # run history: what changed, what was rejected
@@ -68,16 +68,20 @@ See [`11-graph-store.md`](11-graph-store.md) for the schema and the three cache 
 
 That shared module *is* the thesis of the project. Say it out loud in the demo.
 
-## Where state lives — two tiers
+## Where state lives — GitHub in, store out
 
-| Tier | Contents | Home |
-|---|---|---|
-| **Truth** | Applied `blocked_by` edges | **GitHub native dependencies** |
-| **Everything else** | reasoning, confidence, evidence, rejected edges, sub-threshold edges, cycle breaks, waves, critical path, blast radius, leases, run history, model response cache | **The store** (Postgres) |
+| Tier | Contents | Home | Direction |
+|---|---|---|---|
+| **Source** | issues, native `blocked_by`, sub-issue hierarchy | **GitHub** | **read only** |
+| **Everything else** | the full graph — every edge with type, confidence, evidence and provenance — plus rejections, cycle breaks, waves, critical path, blast radius, leases, run history, model response cache | **The store** (Postgres) | read/write |
 
-The first row is the thesis: Lattice can be deleted and the committed edges survive, visible to every other tool. The second row is everything GitHub has nowhere to put.
+**Lattice never writes to GitHub.** Not dependencies, not comments, not labels. Issues are an input.
 
-The store is *not* a second copy of GitHub's dependency data pretending to be authoritative — it holds the ~90% of the computation GitHub cannot represent, plus a cache of the parts it can. Full schema in [`11-graph-store.md`](11-graph-store.md).
+That single constraint removes a category of risk from an unsupervised system: no write permissions to request, no secondary rate limit to dance around, no pruning logic that could delete someone's hand-recorded dependency, and no way for a hallucinated edge to appear to the rest of the team as if a human had asserted it.
+
+**The cost, stated plainly:** the graph exists only where Lattice runs. It is not visible in GitHub's own UI and other tools don't inherit it. Mitigated by making it genuinely retrievable — an interactive graph anyone can open, and `explain_dependency` over MCP.
+
+The write path runs the other way: **humans write, Lattice reads.** Editing `blocked_by` on GitHub is how you overrule the graph, and the next run treats it as ground truth. Full schema in [`11-graph-store.md`](11-graph-store.md).
 
 ## Data contract
 
@@ -85,8 +89,8 @@ Everything downstream of inference speaks `EdgeCandidate`. This type is defined 
 
 ```ts
 type SourceLayer =
-  | 'given'        // already recorded in GitHub — ground truth, never removed
-  | 'sub_issue'    // native hierarchy — used for scheduling, never written back
+  | 'given'        // native blocked_by read from GitHub — immutable ground truth
+  | 'sub_issue'    // native hierarchy — read from GitHub, ground truth
   | 'llm'          // inferred
   | 'agent_reported';  // an agent hit this blocker while working
 
@@ -104,7 +108,7 @@ interface EdgeCandidate {
   source: SourceLayer;
   rationale: string;      // <= 200 chars, human-readable
   evidence?: { issue: number; quote: string };  // VERBATIM from that issue
-  writeBack?: boolean;    // false for soft edges and for sub-issue hierarchy
+  blocking?: boolean;     // does this edge constrain the schedule (score >= threshold)
   pinned?: boolean;       // human nudge: never remove, never cut in a cycle
   suppressed?: boolean;   // human nudge: never propose again
 }
@@ -112,4 +116,4 @@ interface EdgeCandidate {
 
 `pinned` and `suppressed` are the only human inputs in the system, and both are corrections applied *after* the fact — there is no gate anyone stands in front of. See [`11-graph-store.md`](11-graph-store.md#human-nudges--low-priority-but-design-the-columns-now).
 
-`ordering_preference` **never** gets written to GitHub. It exists only as a scheduler tie-break. This single enum value kills the dominant LLM failure mode — *"these are both frontend, so #4 depends on #3."*
+`ordering_preference` never marks an edge `blocking`. This single enum value kills the dominant LLM failure mode — *"these are both frontend, so #4 depends on #3"* — by giving the model somewhere to put a weak intuition that isn't a dependency.

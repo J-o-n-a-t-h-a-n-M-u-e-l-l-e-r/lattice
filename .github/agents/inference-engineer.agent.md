@@ -17,7 +17,8 @@ Read `docs/02-inference-pipeline.md` first — it contains the layer design, the
 - **Never drop the `evidence` field**, and never stop validating that the quote is a real substring of the cited issue. **There is no human review downstream** — `validate.ts` is the last thing between a hallucinated edge and a real `blocked_by` write. Treat it as safety-critical.
 - **`given` edges are ground truth.** Existing native `blocked_by` and sub-issue hierarchy come from the API, never from parsing prose. The model may not contradict them.
 - **No regex dependency extraction.** It was cut deliberately — see `docs/02-inference-pipeline.md`. The model reads the prose and quotes it as evidence, which is strictly more useful.
-- **`ordering_preference` edges never get `writeBack: true`.** They are scheduler tie-breaks, not dependencies.
+- **`ordering_preference` edges are never `blocking`.** They are scheduler tie-breaks, not dependencies.
+- **Store the full graph.** Low-confidence edges are persisted, not discarded — they show as weak signals, feed the gold-set metrics, and can be promoted by a later run.
 - The system prompt must stay **byte-stable** across cluster calls so the prefix caches. Per-cluster content goes in the user turn.
 
 ## Model

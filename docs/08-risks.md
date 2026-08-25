@@ -10,7 +10,7 @@ Put a **"What this doesn't do yet"** section in the README. The judges said unfi
 
 
 1. **LLM-inferred edges are opinions, not facts — and they are now written without review.** This is the biggest risk in the project and it went up when we removed the approval gate.
-   *Mitigation, in layers:* typed edges; a verbatim-evidence requirement checked against source text; the write threshold, so only high-confidence edges reach GitHub while speculative ones merely schedule; `given` edges immutable; prune-only-what-we-authored; and a per-run rejection log. Say all of this in the README's first section rather than burying it.
+   *Mitigation, in layers:* **nothing is written to GitHub**, so a wrong edge cannot corrupt the repo — it only mis-orders our own suggestions until the next run; typed edges; a verbatim-evidence requirement checked against source text; a blocking threshold, so low-confidence edges are stored and shown but constrain nothing; `given` edges immutable; and a per-run rejection log. Say this in the README's first section rather than burying it.
 
 2. **No cheap fallback since the regex layer was cut.** On a repo with no pre-existing `blocked_by`, L1 produces nothing and the graph is entirely model-inferred.
    *Mitigation:* the response cache and the committed fixture snapshot. Accept that `--no-llm` is now a near-empty graph rather than a degraded one, and say so.
@@ -21,14 +21,14 @@ Put a **"What this doesn't do yet"** section in the README. The judges said unfi
 4. **Dogfooding is circular.** Of course it works on issues we wrote knowing the tool existed.
    *Mitigation:* also run read-only against a real public backlog and screenshot that graph. Twenty minutes, and it kills the objection a sharp judge *will* raise.
 
-5. **Cycle breaking is a heuristic** and now runs unsupervised.
-   *Mitigation:* `given` edges are immutable, so it can only ever cut something the model inferred — worst case we mis-order our own suggestions and the next run corrects it. Every break records the cycle, the victim and the alternatives. README names the algorithm and calls it greedy weighted feedback-arc-set.
+5. **Cycle breaking is a heuristic** and now runs unsupervised. It is also the one genuinely destructive step, since a cut edge leaves the graph.
+   *Mitigation:* `given` edges are immutable, so it can only ever cut something the model inferred, and the effect is contained to our own store. Every break records the cycle, the victim and the alternatives. README names the algorithm and calls it greedy weighted feedback-arc-set.
 
 6. **Effort estimates are LLM guesses**, so the critical path's *day count* is soft even though its *shape* is sound.
    *Mitigation:* prefer `size:*` labels where present; present the critical path as an ordering with an indicative duration, never as a date.
 
-7. **Secondary rate limits mid-demo.**
-   *Mitigation:* do the bulk write-back before the demo and show a delta; 1.2s spacing between writes; everything reads from `.lattice/raw.json`.
+7. **The graph is invisible outside Lattice.** Because we never write to GitHub, the dependency information doesn't appear in GitHub's UI and other tools don't inherit it.
+   *Mitigation:* a deliberate trade for being non-destructive — say so rather than apologising for it. The graph is genuinely retrievable: a deployed interactive app anyone can open, and `explain_dependency` over MCP for agents. A team that wants the edges in GitHub writes them by hand, and Lattice picks them up as immutable ground truth.
 
 8. **Copilot latency** — PRs take minutes.
    *Mitigation:* start the run before presenting; show one in flight and one already open.
@@ -37,7 +37,7 @@ Put a **"What this doesn't do yet"** section in the README. The judges said unfi
    *Mitigation:* `wait` is the default policy; stack one level only; demo it once and name the cost out loud.
 
 10. **"GitHub will just build this."**
-   *Mitigation:* don't lead with the visualization. Lead with *the scheduler for agents*. The viz is a consequence, not the product.
+   *Mitigation:* lead with *the scheduler for agents*, not the picture. GitHub shipped the dependency *fields* and still has no graph view, no inference, and nothing that tells an agent what to work on next. The visualisation is the surface; the schedule is the product.
 
 11. **We depend on an anonymous stealth model.** Ox Alpha is a preview and can vanish without notice; its provider is unnamed and retains prompts (though not for training).
     *Mitigation:* the entire model layer sits behind one file and one env var, so switching providers is minutes. Say the privacy position out loud in the README — our backlog is public, so it costs us nothing, but anyone pointing Lattice at a private backlog is sending issue text to a third party. Naming that is evidence of judgement, not a weakness.
@@ -51,13 +51,11 @@ Put a **"What this doesn't do yet"** section in the README. The judges said unfi
 
 | If this fails | Fall back to | Cost |
 |---|---|---|
-| LLM layer slow / expensive / noisy | The response cache, then the committed fixture. `--no-llm` now yields only `given` + hierarchy edges — near-empty on a fresh repo. | 0 |
-| Automatic writes go wrong on a real repo | `LATTICE_WRITE_THRESHOLD=1.0` makes Lattice read-only against GitHub while still scheduling internally | one env var |
+| LLM layer slow / expensive / noisy | The response cache, then the committed fixture. Deterministic edges alone are near-empty on a fresh repo. | 0 |
 | Model returns malformed / off-schema JSON | Expected — Ox Alpha does not enforce schemas. Zod `safeParse` + one retry with the error fed back; drop the cluster on a second failure | 0 — designed in |
 | **Ox Alpha withdrawn** (stealth preview, no stability guarantee) | Swap `LATTICE_MODEL` to any OpenAI-compatible OpenRouter model. The forced-tool + Zod path works on both | minutes |
 | **OpenRouter 429 / daily quota exhausted** | `--no-llm` or `DEMO_MODE=1`; disk cache means re-runs cost nothing | 0 — if the cache exists |
-| React Flow layout ugly | Render `mermaid.ts` output client-side with the `mermaid` package | 0 — built in the first block |
-| `blocked_by` POST forbidden (perms / preview) | (a) `--dry-run` prints exact calls; (b) post the Mermaid DAG plus a blocked-by task list into a tracking issue; (c) shell out to `gh` **only after upgrading to ≥ 2.94** | 30 min |
+| dagre layout looks bad | Swap in elkjs behind the same `nodes + edges → positions` interface | ~20 min |
 | Copilot dispatch fails at demo time | Dry-run payload view + `scripts/agent.ts` local MCP agent | 0 — built earlier |
 | Copilot can't reach the MCP server (no OAuth, secret naming, tunnel) | Demo MCP through Claude Code or MCP Inspector — same server, same tools | 0 |
 | A teammate is lost for a day | The Day-1 path alone is a submission | — |

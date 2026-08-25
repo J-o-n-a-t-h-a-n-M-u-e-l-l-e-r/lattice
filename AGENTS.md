@@ -4,12 +4,14 @@ Read this before changing anything. It applies to Copilot coding agent, Claude C
 
 ## What this project is
 
-Lattice infers dependency edges between GitHub issues, writes the confident ones into GitHub's native `blocked_by` model, and serves the resulting schedule to coding agents over MCP. It runs automatically on issue events and a schedule — there is no approval step and no button. See [`README.md`](README.md) for the pitch and [`docs/01-architecture.md`](docs/01-architecture.md) for the component map.
+Lattice reads a repo's issues, infers the dependency graph between them, stores it, and serves the resulting schedule to coding agents over MCP. It runs automatically on issue events and a schedule — no approval step, no button.
+
+**GitHub is a data source, not a data store. Lattice never writes to it.** See [`README.md`](README.md) for the pitch and [`docs/01-architecture.md`](docs/01-architecture.md) for the component map.
 
 ## Ground rules
 
-1. **GitHub is the source of truth for committed edges.** The store holds reasoning, the derived schedule, and caches — not a competing copy of the dependency data.
-2. **Automatic writes are earned by constraints, not by supervision.** There is no review queue, so the guards in `validate.ts`, the write threshold, immutable `given` edges, and prune-only-what-we-authored are what keep the system honest. Weakening any of them is not a shortcut, it's removing the safety rail.
+1. **Never write to GitHub.** No dependency writes, no comments, no labels, no issue edits. Reads only. This is what makes an unsupervised system safe to run, and it is not negotiable for convenience.
+2. **The full graph lives in the store.** Every edge, above and below the blocking threshold. The one destructive step is cycle breaking, and it is recorded. Transitive reduction is a *rendering* choice — never store the reduced graph.
 3. **The DAG invariant is load-bearing.** `makeAcyclic()` must throw if the graph is still cyclic after cycle-breaking. Never weaken that assertion to make a test pass.
 4. **Every inferred edge carries verbatim evidence, validated against source text.** Nothing downstream re-checks it — an edge whose evidence can't be verified is one nobody can audit after it has been written to a real issue. Guard it.
 5. **Read before you write.** Check [`docs/09-github-api-notes.md`](docs/09-github-api-notes.md) before touching any GitHub call — several endpoints have non-obvious requirements that will silently produce wrong behaviour.
@@ -38,9 +40,9 @@ Lattice infers dependency edges between GitHub issues, writes the confident ones
 
 ## Things that will waste your time if you don't know them
 
-- `POST .../dependencies/blocked_by` wants the issue's **integer `databaseId`**, not the `#number` you see in the UI. Fetch both during ingest.
+- Fetch `databaseId` alongside `number` during ingest. `number` is what humans see; `databaseId` is the stable identifier across renames.
 - Sub-issue and Copilot-assignment GraphQL calls need specific `GraphQL-Features` headers.
-- The dependency write endpoint has a **secondary** rate limit. Space writes out; don't burst.
+- Native `blocked_by` read from GitHub becomes a `given` edge — immutable, and the model may not contradict it. That is how a human overrules the graph.
 
 Full detail in [`docs/09-github-api-notes.md`](docs/09-github-api-notes.md).
 

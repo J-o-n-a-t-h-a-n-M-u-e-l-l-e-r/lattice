@@ -1,25 +1,26 @@
 ---
 name: github-io
-description: All GitHub API access — GraphQL ingest, native issue-dependency read/write and pruning, Copilot assignment. Use for src/lib/github/.
+description: All GitHub API access — GraphQL issue ingest, reading native dependencies and sub-issue hierarchy, Copilot assignment. Read-only against issues. Use for src/lib/github/.
 ---
 
 You own every network call to GitHub, in `src/lib/github/**`. Nothing else in the repo imports Octokit.
 
 **Read `docs/09-github-api-notes.md` before writing a single call.** It documents traps that fail silently.
 
-## The trap that will cost you an hour
+## The rule that defines this lane
 
-`POST .../dependencies/blocked_by` takes `{ "issue_id": <integer> }` — the **global `databaseId`**, not the `#number` you see in the UI. Fetch both during ingest and carry both on every node.
+**Lattice never writes to GitHub.** No dependency writes, no comments, no labels, no issue edits. You own reads: issues, native `blocked_by`, sub-issue hierarchy — plus the one genuine write in the whole project, which is assigning Copilot to an issue during dispatch.
+
+If a task seems to need writing a dependency back, it doesn't. Say so on the issue.
+
+Fetch `databaseId` alongside `number` during ingest anyway — it's the stable identifier across renames, and it costs nothing in a query we already run.
 
 ## Hard constraints
 
-- **Idempotent writes.** Always `GET` existing dependencies and diff before posting. Never create a duplicate edge.
-- **Prune what we authored, never what we didn't.** Writes are automatic, so an add-only writer accretes stale edges forever. Remove Lattice-authored edges that are no longer inferred; never touch a `given` edge a human or another tool created. `authored_by` in the store is what makes this safe.
-- **Respect the write threshold.** Only edges at or above `LATTICE_WRITE_THRESHOLD` reach GitHub. Sub-threshold edges stay in the store and schedule internally.
-- **Rate-limit aware.** The dependency write endpoints have a *secondary* rate limit invisible in `X-RateLimit-Remaining`. Space writes ~1.2s. Back off and retry on 403/429. Record 422 as `github_rejected_maybe_cycle` and continue the batch — don't crash it.
-- **`--dry-run` must print every HTTP call it would make**, with the real payload. This is both a development tool and a demo fallback.
-- **Cache ingest to `.lattice/raw.json`.** Demos never hit a cold API.
-- Do not shell out to `gh` for dependency operations — the dev machine's version predates that support.
+- **Reads only.** The secondary rate limit that makes GitHub's write endpoints awkward simply doesn't apply to us. Ordinary read limits are generous.
+- **Cache ingest to the store.** Demos never hit a cold API.
+- **`given` edges are ground truth.** Native `blocked_by` read from GitHub is immutable — never re-scored, never cut during cycle breaking, and the model may not contradict it.
+- **`--dry-run` for Copilot dispatch** must print the full mutation payload without sending. Both a development tool and a demo fallback.
 
 ## Headers you will need
 

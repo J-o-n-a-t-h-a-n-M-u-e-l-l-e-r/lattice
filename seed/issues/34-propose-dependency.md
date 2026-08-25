@@ -2,9 +2,9 @@
 <!-- labels: lane:mcp,size:M -->
 **What**
 
-`report_dependency({ agent_id, blocked, blocked_by, rationale, evidence })` — an agent that hits an unrecorded blocker mid-run records it. The edge enters the graph through **the same validators and the same write threshold** as model-inferred edges. `source: 'agent_reported'`, confidence 0.9.
+`report_dependency({ agent_id, blocked, blocked_by, rationale, evidence })` — an agent that hits an unrecorded blocker mid-run records it. The edge enters the graph through **the same validators and the same blocking threshold** as model-inferred edges. `source: 'agent_reported'`, confidence 0.9.
 
-Returns whether it was accepted, whether it reached GitHub, and which issues just became blocked.
+Returns whether it was accepted, whether it is blocking, and which issues just became blocked.
 
 **Why it matters**
 
@@ -24,7 +24,7 @@ It is also the answer to the obvious judging question, *"what happens when the i
 
 - [ ] Reported edges are validated by the same guards, with no bypass
 - [ ] A fabricated evidence quote is rejected and the reason returned
-- [ ] Edges below the write threshold are stored but not written to GitHub
+- [ ] Edges below the blocking threshold are stored and shown, but constrain nothing
 - [ ] The response reports what became newly blocked
 - [ ] It cannot contradict a `given` edge
 

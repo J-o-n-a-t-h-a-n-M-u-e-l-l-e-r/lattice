@@ -4,7 +4,7 @@
 
 ## Orientation
 
-Lattice infers dependency edges between GitHub issues, writes the confident ones into GitHub's native `blocked_by` model, and serves the resulting schedule to coding agents over MCP. It runs automatically — no approval step, no button.
+Lattice reads a repo's issues, infers the dependency graph between them, stores it, and serves the resulting schedule to coding agents over MCP. It runs automatically — no approval step, no button. **GitHub is a data source, not a data store: Lattice never writes to it.**
 
 | I'm working on… | Read |
 |---|---|
@@ -18,7 +18,7 @@ Lattice infers dependency edges between GitHub issues, writes the confident ones
 
 ## The four rules that matter most
 
-1. **Never bypass `validate.ts` or the write threshold.** There is no human review downstream; those guards are the only thing between a hallucinated edge and a real `blocked_by` write.
+1. **Never write to GitHub.** Reads only — no dependency writes, comments, labels or issue edits. And never bypass `validate.ts`: there is no human review downstream, so those guards are the only check on what enters the graph.
 2. **Never weaken the DAG invariant** in `src/graph/acyclic.ts` to make something pass.
 3. **Never drop the `evidence` field** or stop validating it against source text — an edge whose evidence can't be checked is an edge nobody can audit after the fact.
 4. **Stay inside the `Scope` list in your issue body.** Five people and several agents work this repo concurrently.

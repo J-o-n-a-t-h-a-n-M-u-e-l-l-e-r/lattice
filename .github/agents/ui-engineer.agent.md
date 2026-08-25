@@ -19,7 +19,7 @@ A fixture bound to the `GraphStore` interface exists before the pipeline does. *
 
 - **Rejections** — what the validators threw out, grouped by reason. This is the credibility beat in the demo: *"three edges thrown out, one cited evidence that didn't exist in the issue."*
 - **Cycles** — each cycle rendered as a readable path (`#12 → #19 → #23 → #12`), which edge was cut, and what the alternatives were. Read-only: the pipeline already decided. The point is that it wrote down what it did.
-- **Below threshold** — edges that schedule but were not written to GitHub. Makes the two-tier policy visible.
+- **Below threshold** — edges stored and drawn, but not treated as blockers. Makes the two-tier policy visible.
 
 Human nudges (`pin` / `suppress` on an edge) are low priority — a row action here when everything else is done. They are corrections after the fact, not a gate.
 
