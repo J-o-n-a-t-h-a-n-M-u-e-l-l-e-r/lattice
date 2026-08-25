@@ -49,17 +49,26 @@ function Legend({ reduced, setReduced, showSoft, setShowSoft }: {
   );
 }
 
-export function GraphView({ repo }: { repo?: string }) {
-  const [payload, setPayload] = useState<GraphPayload | null>(null);
-  const [error, setError] = useState<{ message: string; status?: number } | null>(null);
+export function GraphView({ initial, initialError, repo }: {
+  initial: GraphPayload | null;
+  initialError: { message: string; status?: number; url: string } | null;
+  repo?: string;
+}) {
+  const [payload, setPayload] = useState<GraphPayload | null>(initial);
+  const [error, setError] =
+    useState<{ message: string; status?: number; url?: string } | null>(initialError);
   const [selected, setSelected] = useState<number | null>(null);
   const [hover, setHover] = useState<number | null>(null);
   const [reduced, setReduced] = useState(true);
   const [showSoft, setShowSoft] = useState(true);
 
-  useEffect(() => {
-    api.graph(repo).then(setPayload).catch((e) => setError({ message: e.message, status: e.status }));
-  }, [repo]);
+  // The server already fetched for first paint; this only refreshes on demand.
+  const refresh = () => {
+    setError(null);
+    api.graph(repo)
+      .then((p) => { setPayload(p); setError(null); })
+      .catch((e) => setError({ message: e.message, status: e.status, url: e.url }));
+  };
 
   const flow = useMemo(() => {
     if (!payload) return null;
@@ -77,31 +86,35 @@ export function GraphView({ repo }: { repo?: string }) {
     });
   }, [payload, reduced, showSoft, hover, selected]);
 
-  if (error) {
+  if (error && !payload) {
+    const noRun = error.status === 404;
     return (
       <div className="flex-1 grid place-items-center p-8">
-        <div className="max-w-md text-center space-y-3">
+        <div className="max-w-lg text-center space-y-3">
           <h2 className="text-lg font-medium">
-            {error.status === 404 ? 'No analysis yet' : 'Could not reach the backend'}
+            {noRun ? 'No analysis yet' : 'Could not reach the backend'}
           </h2>
           <p className="text-[13px] leading-relaxed" style={{ color: 'var(--muted)' }}>
-            {error.status === 404
-              ? 'The pipeline has not run for this repo yet. Run npm run analyze, or trigger it by editing an issue.'
+            {noRun
+              ? 'The pipeline has not run for this repo yet.'
               : error.message}
           </p>
-          <code className="block text-[12px] rounded px-3 py-2 font-mono"
+          <code className="block text-left text-[12px] rounded px-3 py-2.5 font-mono whitespace-pre"
                 style={{ background: 'var(--panel)', color: 'var(--accent)' }}>
-            npm run analyze
+{noRun
+  ? 'npm run analyze'
+  : `# is the backend running?\ncurl ${(error.url ?? '').replace(/\/api.*/, '')}/api/health`}
           </code>
+          <button onClick={refresh} className="text-[12px] underline"
+                  style={{ color: 'var(--muted)' }}>retry</button>
         </div>
       </div>
     );
   }
 
   if (!payload || !flow) {
-    return <div className="flex-1 grid place-items-center text-[13px]" style={{ color: 'var(--muted)' }}>
-      Loading graph…
-    </div>;
+    return <div className="flex-1 grid place-items-center text-[13px]"
+                style={{ color: 'var(--muted)' }}>No graph data.</div>;
   }
 
   const { stats } = payload;

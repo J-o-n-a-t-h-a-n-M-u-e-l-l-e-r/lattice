@@ -1,3 +1,4 @@
+import '../env.js';
 import { runPipeline } from '../infer/run.js';
 import { defaultRepo } from '../config.js';
 

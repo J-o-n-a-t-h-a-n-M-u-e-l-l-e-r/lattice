@@ -1,3 +1,4 @@
+import '../env.js';
 import { mkdir, writeFile } from 'node:fs/promises';
 import { buildGraphPayload } from '../api/graph.js';
 import { defaultRepo } from '../config.js';

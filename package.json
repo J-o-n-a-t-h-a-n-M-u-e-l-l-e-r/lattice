@@ -1,8 +1,13 @@
 {
   "name": "lattice",
   "private": true,
-  "workspaces": ["packages/*", "apps/*"],
-  "engines": { "node": ">=20" },
+  "workspaces": [
+    "packages/*",
+    "apps/*"
+  ],
+  "engines": {
+    "node": ">=20"
+  },
   "scripts": {
     "build": "npm run build -w @lattice/types && npm run build -w @lattice/backend && npm run build -w @lattice/web",
     "test": "npm run test -w @lattice/backend && npm run emit -w @lattice/backend",
@@ -11,7 +16,8 @@
     "dev:web": "npm run dev -w @lattice/web",
     "analyze": "npm run analyze -w @lattice/backend",
     "agent": "npm run agent -w @lattice/backend",
-    "typecheck": "tsc -b --pretty"
+    "typecheck": "tsc -b --pretty",
+    "start": "concurrently -n backend,web -c blue,magenta \"npm start -w @lattice/backend\" \"npm start -w @lattice/web\""
   },
   "devDependencies": {
     "concurrently": "^9.1.0",

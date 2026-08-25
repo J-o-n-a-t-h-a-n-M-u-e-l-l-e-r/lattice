@@ -71,36 +71,70 @@ Not built yet: Copilot dispatch, the scheduled GitHub Action, `DEMO_MODE` fixtur
 
 ## Quickstart
 
-No database and no GitHub token needed to look around — the store runs on
-[PGlite](https://pglite.dev) (real Postgres, embedded), so a clone just works.
+No database and no GitHub token needed to look around: the store runs on
+[PGlite](https://pglite.dev) (real Postgres, embedded), and `gh auth token` is
+used automatically if `GITHUB_TOKEN` is unset.
 
 ```bash
 npm install
-npm test                      # graph unit tests + writes artifacts/graph.json
+npm run build          # types + backend (tsc) + web (next build)
+npm test               # 11 graph unit tests, then writes artifacts/graph.json
 ```
 
-To analyse a real repo you need a GitHub token (read-only) and an OpenRouter key:
+### Run it
+
+Two terminals. The backend runs **compiled** — that path has no native
+binaries in it and does not break:
 
 ```bash
-cp .env.example .env          # fill in GITHUB_TOKEN + OPENROUTER_API_KEY
-export GITHUB_TOKEN=$(gh auth token)
-export LATTICE_OWNER=your-org LATTICE_REPO=your-repo
+# terminal 1
+npm run build && npm start -w @lattice/backend      # :3001
 
-npm run analyze               # one model request for a ~50-issue backlog
-npm run dev                   # backend :3001, web :3000
+# terminal 2
+npm run dev -w @lattice/web                          # :3000
 ```
 
-Then open **http://localhost:3000**.
+Open **http://localhost:3000**.
+
+> `npm run dev` (both services with hot reload) uses `tsx`. If it fails with
+> `The package "@esbuild/darwin-arm64" could not be found`, npm has dropped an
+> optional binary — `rm -rf node_modules package-lock.json && npm install
+> --include=optional` fixes it. The compiled path above avoids this entirely.
+
+### Analyse a repo
+
+Needs an OpenRouter key. Copy `.env.example` to `.env` and set
+`OPENROUTER_API_KEY`, `LATTICE_OWNER`, `LATTICE_REPO`.
+
+```bash
+npm run analyze        # ~1 model request for a 50-issue backlog
+```
+
+Expect this to take a few minutes: Ox Alpha is a reasoning model and the whole
+backlog goes in one call. Re-runs are instant — responses are cached by prompt
+hash, which is also what protects the 50-request/day free-tier quota.
 
 | Command | What it does |
 |---|---|
-| `npm run build` | Builds both services |
-| `npm test` | Runs the tests, then emits `artifacts/graph.json` and `artifacts/schedule.json` |
-| `npm run analyze` | Runs the pipeline once against `LATTICE_OWNER/LATTICE_REPO` |
-| `npm run agent -- --agents 3` | Three agents claim work concurrently through MCP; asserts leases are atomic |
-| `npm run dev` | Both services with hot reload |
+| `npm run build` | Builds all three packages |
+| `npm test` | Graph unit tests, then emits `artifacts/graph.json` + `schedule.json` |
+| `npm run analyze` | One pipeline run against `LATTICE_OWNER/LATTICE_REPO` |
+| `npm run agent -- --agents 3` | Three agents claim work over MCP; asserts leases are atomic |
+| `npm start -w @lattice/backend` | Compiled backend on :3001 |
+| `npm run dev -w @lattice/web` | Web app on :3000 |
 
-Set `DATABASE_URL` to use a hosted Postgres (Neon) instead of the embedded one.
+Set `DATABASE_URL` to use hosted Postgres (Neon) instead of the embedded one.
+
+### Check it without a browser
+
+```bash
+curl localhost:3001/api/health
+curl "localhost:3001/api/graph" | jq '.stats'
+curl -X POST localhost:3001/mcp \
+  -H 'content-type: application/json' \
+  -H 'accept: application/json, text/event-stream' \
+  -d '{"jsonrpc":"2.0","id":1,"method":"tools/list"}'
+```
 
 ### The machine-readable graph
 

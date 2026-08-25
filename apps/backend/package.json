@@ -10,7 +10,8 @@
     "analyze": "tsx src/scripts/analyze.ts",
     "emit": "tsx src/scripts/emit-graph.ts",
     "agent": "tsx src/scripts/agent.ts",
-    "test": "vitest run"
+    "test": "vitest run",
+    "analyze:dist": "node dist/scripts/analyze.js"
   },
   "dependencies": {
     "@electric-sql/pglite": "^0.5.7",
@@ -19,6 +20,7 @@
     "@modelcontextprotocol/sdk": "^1.30.0",
     "@octokit/graphql": "^8.1.1",
     "@octokit/rest": "^21.0.2",
+    "dotenv": "^16.4.7",
     "drizzle-orm": "^0.45.2",
     "hono": "^4.13.4",
     "openai": "^4.77.0",

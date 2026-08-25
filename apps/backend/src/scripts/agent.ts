@@ -1,3 +1,4 @@
+import '../env.js';
 import { defaultRepo } from '../config.js';
 import * as tools from '../mcp/tools.js';
 

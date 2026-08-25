@@ -1,3 +1,4 @@
+import './env.js';
 import { createServer } from 'node:http';
 import { getRequestListener } from '@hono/node-server';
 import { Hono } from 'hono';
