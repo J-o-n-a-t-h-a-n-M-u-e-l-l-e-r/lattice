@@ -65,7 +65,7 @@ WHEN YOU ARE DONE
 - Call the `lattice` MCP server tool `report_progress` with
   { number: 12, status: "pr_opened", pr_url: <your PR url> }.
 - If you discover this issue is actually blocked by something else, call
-  `propose_dependency` instead of working around it. A human reviews it.
+  `report_dependency` instead of working around it. It enters the graph for everyone.
 ```
 
 Every line of that is derived from the graph. The agent gets the ordering knowledge for free instead of re-deriving it — which is the whole amortisation argument, made concrete.
@@ -91,7 +91,7 @@ Mitigations to state, not necessarily build:
 - only stack when the base PR has an approval or is otherwise stable
 - auto-comment on the stacked PR: *"based on #NN, rebase after that merges"*
 
-**`wait` being the default is itself a good answer to "sensible human checkpoints"** — the aggressive mode is opt-in.
+**`wait` being the default is the conservative-by-construction choice** — the aggressive mode is opt-in, and that pattern (earn autonomy with tight defaults) is the same one behind the write threshold.
 
 ---
 
@@ -107,7 +107,7 @@ Repo **Settings → Copilot → MCP servers**:
       "url": "https://<our-deploy>/api/mcp",
       "headers": { "Authorization": "Bearer $COPILOT_MCP_LATTICE_TOKEN" },
       "tools": ["list_ready_work", "get_issue_context", "explain_dependency",
-                "report_progress", "propose_dependency", "simulate_completion"]
+                "report_progress", "report_dependency", "simulate_completion"]
     }
   }
 }

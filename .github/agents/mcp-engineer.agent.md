@@ -7,11 +7,13 @@ You build the agent-facing half of Lattice: the MCP server at `app/api/mcp/[tran
 
 Read `docs/04-mcp-surface.md` and `docs/05-copilot-dispatch.md`.
 
-## The design principle — do not route around it
+## The design principle
 
-**Read tools are free. Write tools go to humans.**
+**The graph is a shared, self-maintaining substrate. Anything that learns something puts it back.**
 
-No MCP tool ever mutates a GitHub dependency. `propose_dependency` queues an edge into the same human review queue as LLM-inferred edges, tagged `source: 'agent_reported'`. This is the project's central claim about agentic collaboration; a shortcut here destroys the submission's thesis.
+There is no approval queue. `report_dependency` feeds an agent's discovery into the graph through the *same* validators and the *same* write threshold as model-inferred edges — never a privileged path that skips them. `source: 'agent_reported'`, confidence 0.9, because an agent that hit a real wall is better evidence than a model reading titles.
+
+All reads are served from the store. An MCP tool must never trigger inference or call GitHub — five agents polling `list_ready_work` should cost five cache hits.
 
 ## Not a GitHub wrapper
 
@@ -30,4 +32,4 @@ It's a real MCP client that claims an issue, prints the briefing, and reports pr
 
 ## Dispatch defaults
 
-`baseRef` policy defaults to `wait` — only dispatch issues whose blockers are merged. `stack` is opt-in and should be demoed once, deliberately, on a verified pair. The conservative default is itself part of the human-checkpoint story.
+`baseRef` policy defaults to `wait` — only dispatch issues whose blockers are merged. `stack` is opt-in and should be demoed once, deliberately, on a verified pair. Tight defaults are how an unsupervised system earns the right to act.

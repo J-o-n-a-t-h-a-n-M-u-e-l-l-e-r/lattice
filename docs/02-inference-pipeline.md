@@ -1,8 +1,24 @@
 # 02 · The inference pipeline
 
-Five layers. Cheap and certain first. Each layer emits `EdgeCandidate` objects into a common bag; **nothing is an edge until merge + validate**.
+Fully automatic. Triggered by issue events or a schedule, it produces a DAG, persists it, and applies it to GitHub without asking anyone anything.
 
-The guiding principle: *the correct answer for most pairs is no edge.* Every design choice below exists to fight the model's urge to find structure in topical similarity.
+The guiding principle: *the correct answer for most pairs is no edge.* Every design choice below exists to fight the model's urge to find structure in topical similarity — because **there is no human gate downstream to catch it.**
+
+```
+trigger ──► L0 ingest ──► L1 given edges ──► L2 cluster (optional)
+                                                    │
+                                                    ▼
+                                             L3 LLM extraction
+                                                    │
+                                       L4 validate ─┴─ L5 merge & score
+                                                    │
+                                   L6 make acyclic + transitive reduction
+                                                    │
+                                  ┌─────────────────┴─────────────────┐
+                                  ▼                                   ▼
+                          L7 apply to GitHub                  persist to store
+                          (native blocked_by)                 (graph + provenance)
+```
 
 ---
 
@@ -12,101 +28,63 @@ One paginated GraphQL query, 50 issues per page, fetching per issue:
 
 `number`, `id` (node ID — needed for Copilot assignment), **`databaseId`** (the integer the REST `blocked_by` POST needs — **get it here, not with N extra calls**), `title`, `body`, `labels`, `milestone`, `assignees`, `state`, `parent` / `subIssues` (needs `GraphQL-Features: sub_issues`), and `timelineItems(itemTypes: [CROSS_REFERENCED_EVENT, CONNECTED_EVENT], first: 20)`.
 
-Then one REST `GET .../dependencies/blocked_by` per issue to learn what's *already* recorded. At 30 issues that's 30 calls — batch with concurrency 5.
+Then one REST `GET .../dependencies/blocked_by` per issue to learn what is *already* recorded. Batch with concurrency 5.
 
-Cache everything to `.lattice/raw.json` behind a `--cached` flag. **Never demo off a live cold fetch.**
+Cache to the store, keyed by repo. **Never run a demo off a cold fetch.**
 
-Truncate bodies to ~1500 chars for the LLM stage, but keep full text for regex matching and evidence validation.
-
----
-
-## L1 · Deterministic extractors
-
-No LLM. High precision. Runs first and always — this is what makes the graph work even if the model is unavailable.
-
-```ts
-const DIRECTIONAL = [
-  // group 2 = ref  →  THIS issue is blocked BY ref
-  { re: /\b(?:blocked\s+by|depends\s+on|requires|needs|waiting\s+on|after|prereq(?:uisite)?s?:?|built\s+on(?:\s+top\s+of)?)\b[^\n]{0,40}?(#(\d+))/gi,
-    dir: 'blockedBy' },
-  // THIS issue blocks ref
-  { re: /\b(?:blocks|unblocks|prerequisite\s+for|must\s+land\s+before|enables)\b[^\n]{0,40}?(#(\d+))/gi,
-    dir: 'blocks' },
-];
-// confidence 0.95, source 'explicit_text'
-// evidence = the matched sentence, trimmed to 160 chars
-// GUARD: reject matches inside a code fence or a blockquote of someone else's text
-```
-
-**Sub-issue hierarchy** → children block the parent's closure. Confidence 0.99, `source: 'sub_issue'` — but flagged **`writeBack: false`**. GitHub already models this natively; duplicating it into `blocked_by` is noise. We *use* it in the scheduler, we don't write it. Saying this out loud in the demo shows we understand GitHub's data model rather than bulldozing it.
-
-### Three important non-edges from L1
-
-These feed candidate generation instead:
-
-- **Bare `#123`** with no directional phrase → **not an edge**. A mention is not a dependency. Emitted as a *candidate pair* for L3.
-- **Shared milestone or `area:*` label** → cluster key, not an edge.
-- **Path & symbol extraction** → pull `src/foo/bar.ts`, `packages/x`, and backticked identifiers containing `/` or `.` from title + body. Build an IDF-weighted inverted index. Shared rare token → candidate pair.
-
-That inverted index is reused later for **agent conflict risk** (see [`05-copilot-dispatch.md`](05-copilot-dispatch.md)), so it earns its keep twice.
-
-The trick worth naming: **cheap signals do double duty as candidate generation.**
+Truncate bodies to ~1500 chars for the LLM stage, but keep full text for evidence validation.
 
 ---
 
-## L2 · Candidate generation & clustering — the O(n²) answer
+## L1 · Given edges — deterministic, API-sourced
 
-> **Since we moved to Ox Alpha (1M context), clustering is optional at our scale.** It solved two problems; the big context window only solves one of them.
+Two sources, both structured data straight from GitHub. **No text parsing.**
+
+| Source | Edge | Confidence | Notes |
+|---|---|---|---|
+| Existing native `blocked_by` | as recorded | `1.0`, `source: 'given'` | Ground truth. Never overwritten, never removed by the pipeline. |
+| Sub-issue hierarchy | children block the parent's closure | `0.99`, `source: 'sub_issue'` | **`writeBack: false`** |
+
+Sub-issue edges are used by the scheduler but never written into `blocked_by` — GitHub already models hierarchy natively and duplicating it is noise. Saying this out loud in the demo shows we understand GitHub's data model rather than bulldozing it.
+
+Given edges are also fed to the model as ground-truth context, so it doesn't spend output re-proposing what already exists.
+
+> ### Deliberately not here: regex extraction of "depends on #123"
 >
-> | Problem | Still real? |
-> |---|---|
-> | **Capacity** — the backlog doesn't fit | ❌ Gone. 45 issues ≈ 30k tokens against 1M. |
-> | **Precision** — a model asked about 45 issues attends worse than one asked about 12 | ✅ **Still real.** |
+> An earlier design parsed directional phrases out of issue prose. **Cut.**
 >
-> Make cluster size configurable (`--cluster-size 0` = single call) and **default to one call for `n ≤ 40`**. Run both against the gold set and report which wins — that comparison is a genuinely interesting result for one extra run. See [`10-model-provider.md`](10-model-provider.md#2--1m-context--clustering-is-now-optional-at-our-scale).
+> Free-text dependency phrasing is inconsistent, and parsing it *well* means handling code fences, quoted text, negation, and ambiguous direction — a pile of brittle special cases for a signal the model already reads perfectly well. The model sees the same prose and reports it as an edge with the quote attached as evidence, which is strictly more useful than a regex hit.
+>
+> **Consequence, stated honestly:** the LLM is now load-bearing with no cheap fallback. On a repo with no pre-existing dependencies, L1 produces nothing and the graph is *entirely* inferred. That is a real reduction in robustness, bought for a large reduction in surface area. The mitigations are the response cache and the committed fixture snapshot — see [`08-risks.md`](08-risks.md).
 
-Never ask the model about all pairs. Never ask it about a *single* pair either — N² LLM calls is the same problem wearing a hat. **Ask about clusters.**
+---
 
-```
-candidates = union(
-  bare cross-reference pairs,                 // highest prior
-  same-milestone pairs (cap 40 per milestone),
-  same area:* label pairs (cap 40 per label),
-  top-6 embedding neighbours per issue,       // one batched embedding call over n
-  IDF-weighted path/symbol overlap pairs (> 0.25),
-  all pairs within one sub-issue tree
-)  →  dedupe, cap at 6n
-```
+## L2 · Clustering — optional, off by default
 
-Build the **candidate graph** (undirected, weighted by how many signals fired), partition with greedy modularity or connected components, and split any component larger than 14 issues.
+With `stealth/ox-alpha`'s 1M-token context the entire backlog fits in one call at any realistic size. 45 issues is roughly 30k tokens.
 
-Two refinements that matter:
+Clustering originally solved two problems; the big window kills one of them:
 
-- **Each issue joins its top 2 clusters** — overlapping windows, so cluster boundaries get double coverage.
-- **Add a "representatives" cluster**: the 2 highest-degree issues from each cluster, capped at 14. This is what catches genuine cross-cluster edges.
+| Problem | Still real? |
+|---|---|
+| **Capacity** — the backlog doesn't fit | ❌ Gone |
+| **Precision** — a model asked about 45 issues attends worse than one asked about 12 | ✅ Still real |
 
-### Cost model — put these numbers in the README
+So `LATTICE_CLUSTER_SIZE` defaults to `0`, meaning one call. Set it to e.g. `14` to enable the clustered path: build a candidate graph from shared milestones, `area:*` labels, sub-issue trees and path/symbol overlap; partition it; give each issue membership in its top 2 clusters; add a representatives cluster to catch cross-cluster edges.
 
-| Backlog size | LLM calls | Wall clock (concurrency 5) |
-|---|---|---|
-| n = 30 | ~5 | seconds |
-| n = 200 | ~32 | ~50s |
-
-Measured scale claims are rare in hackathon submissions and judges notice.
-
-⚠️ These are **request** counts, and OpenRouter's free tier allows 20/min and 50/day (1000/day with $10 of credits). At n=200 a single clustered run is ~16% of an un-topped-up daily quota. Cache responses to disk keyed by prompt hash — see [`10-model-provider.md`](10-model-provider.md#rate-limits--plan-for-these-they-will-bite).
+Measure both against the gold set and report which wins. One extra run, and a genuinely interesting result.
 
 ---
 
 ## L3 · LLM edge extraction
 
-**Model: `stealth/ox-alpha` via OpenRouter.** Free, 1M context, OpenAI-compatible. Full setup, limits and caveats in [`10-model-provider.md`](10-model-provider.md).
+**Model: `stealth/ox-alpha` via OpenRouter.** Free, 1M context, OpenAI-compatible. Setup, limits and caveats in [`10-model-provider.md`](10-model-provider.md).
 
-⚠️ **This model does not enforce JSON schemas.** Use forced tool-calling (`tool_choice` pinned to one `emit_edges` function) and then **Zod-validate every response**, retrying once with the validation error fed back. Never `parse`, always `safeParse`. Details in [`10-model-provider.md`](10-model-provider.md#1--no-schema-enforcement--force-a-tool-then-validate).
+⚠️ **This model does not enforce JSON schemas.** Use forced tool-calling (`tool_choice` pinned to one `emit_edges` function), then **Zod-validate every response**, retrying once with the validation error fed back. Never `parse`, always `safeParse`.
 
 ### The system prompt
 
-Keep it **byte-stable** so the prefix caches across every cluster call. The per-cluster issue list goes in the user turn, after the cache breakpoint.
+Keep it byte-stable — it makes the response cache key stable, and helps if the provider caches prefixes.
 
 ```
 You extract BLOCKING DEPENDENCIES between software issues in one backlog.
@@ -134,6 +112,9 @@ The correct answer for most pairs is NO EDGE. A backlog of 12 issues typically h
 between 2 and 8 real blocking edges. If you emit more than 1.5x the number of
 issues, you are pattern-matching on topic, not reasoning about necessity.
 
+If an issue states its own dependencies in prose ("depends on #12", "after the
+schema lands"), treat that as strong evidence and quote it.
+
 RULES:
 1. Only use issue numbers from the provided list. Never invent a number.
 2. Every edge MUST include `evidence`: a VERBATIM span of <=160 chars copied
@@ -141,32 +122,14 @@ RULES:
    is the specific text that made you believe this. If you cannot copy such a span,
    do not emit the edge.
 3. `confidence` is your probability the edge is real, honestly calibrated.
-   Use the full range. Below 0.5 means "probably not, but worth a human glance."
+   Use the full range. Below 0.5 means "probably not".
 4. Never emit both A->B and B->A. Pick the direction where the DEPENDENT work is
    the one that consumes the other's output. If genuinely bidirectional, the issues
    should be merged — emit nothing and note it in `notes`.
 5. `effort_days` per issue: your estimate of implementation days (0.5, 1, 2, 3, 5).
 ```
 
-The two sentences doing most of the work are the **operational test** in paragraph two (*"would have to be substantially redone"* — it converts vague relatedness into a falsifiable claim) and the **density expectation** (*"typically between 2 and 8"* — it gives the model a prior that fights over-generation).
-
-### User turn, per cluster
-
-```
-Issues in this cluster (you may ONLY reference these numbers):
-
-<issue number="12" labels="area:graph,size:M" milestone="M1">
-title: Implement Tarjan SCC and cycle breaking
-body: |
-  ...up to 1500 chars...
-</issue>
-<issue number="19" ...>
-...
-</issue>
-
-Already-known dependencies (do not re-emit; treat as ground truth context):
-  19 blocked_by 12
-```
+Three lines carry most of the precision: the **operational test** (*"would have to be substantially redone"*, which turns vague relatedness into a falsifiable claim), the **density expectation** (*"typically between 2 and 8"*, a prior against over-generation), and the **prose-dependency instruction**, which is what now does the job the regex layer used to.
 
 ### Output schema
 
@@ -180,15 +143,17 @@ Already-known dependencies (do not re-emit; treat as ground truth context):
     evidence: { issue: integer, quote: string }
   }],
   estimates: [{ issue: integer, effort_days: number }],
-  notes: string                                 // merge suggestions, ambiguities
+  notes: string
 }
 ```
 
 ---
 
-## Anti-hallucination: five guards
+## L4 · Validation — five guards
 
-All cheap, all in `validate.ts`. This file is what makes LLM output trustworthy enough to write to GitHub.
+Zod catches malformed *shape*. These catch well-formed *nonsense*.
+
+**These guards carry more weight than they did under the old design.** There is no human review downstream, so `validate.ts` is the only thing standing between a hallucinated edge and a `blocked_by` write on a real issue. Treat it as the safety-critical file it now is.
 
 ```ts
 export function validateEdges(raw: RawEdge[], cluster: Issue[]) {
@@ -204,15 +169,13 @@ export function validateEdges(raw: RawEdge[], cluster: Issue[]) {
     // G2 — evidence must be a real substring of the cited issue.
     const hay = text.get(e.evidence.issue) ?? '';
     if (!hay.includes(norm(e.evidence.quote))) {
-      // fuzzy second chance: >=0.85 token overlap survives with a confidence haircut
       if (tokenOverlap(norm(e.evidence.quote), hay) >= 0.85) e.confidence -= 0.25;
       else { rejected.push({ e, reason: 'fabricated_evidence' }); continue; }
     }
     // G3 — soft edges never reach GitHub.
     if (e.type === 'ordering_preference') e.writeBack = false;
-    // G4 — deterministic layer wins on direction. The LLM cannot flip an explicit
-    //      "blocked by" that a human wrote in the issue body.
-    if (deterministic.hasReverse(e)) { rejected.push({ e, reason: 'contradicts_explicit' }); continue; }
+    // G4 — given edges win. The model cannot contradict what GitHub already records.
+    if (given.hasReverse(e)) { rejected.push({ e, reason: 'contradicts_given' }); continue; }
     kept.push(e);
   }
 
@@ -224,57 +187,68 @@ export function validateEdges(raw: RawEdge[], cluster: Issue[]) {
 }
 ```
 
-**Surface the rejection counts in the UI and the README.** A line like
+Every rejection is persisted with its reason. Surface the counts on the run:
 
-> `6 LLM calls · 31 edges proposed · 3 rejected (1 fabricated evidence, 2 density cap) · 0 hallucinated IDs`
-
-is a credibility signal no other team will have.
-
-### Optional L3.5 · Adjudication pass
-
-Only if time allows. For edges in the 0.45–0.75 confidence band, make one call per edge with both issues in full, asking for a yes/no with reasoning. Raises precision meaningfully.
-
-The model is free, so the cost objection is gone — but the **request quota** is not. One call per borderline edge can be 15+ requests against a daily limit of 50 (or 1000 with credits). Budget it, and cache aggressively.
+> `1 request · 31 edges proposed · 3 rejected (1 fabricated evidence, 2 density cap) · 0 hallucinated IDs`
 
 ---
 
-## L4 · Merge & scoring
+## L5 · Merge & scoring
 
 ```ts
-// Independent-evidence combination, then penalties.
-score = 1 - Π(1 - c_i)   // over all candidates for the same (blocked, blockedBy)
-
-// Agreement across DISTINCT source layers is stronger than the same layer twice.
-if (distinctLayers >= 2) score = Math.min(0.99, score + 0.05);
-
-// Contested: both directions were proposed.
-if (reverseExists) { score = Math.max(score, reverse.score) - 0.15; flag('contested'); }
+score = 1 - Π(1 - cᵢ)                                  // independent evidence
+if (distinctLayers >= 2) score = min(0.99, score + 0.05);
+if (reverseExists)       { score = max(score, reverse.score) - 0.15; flag('contested'); }
 ```
 
-Bands:
+### The write threshold — the policy that replaced the review queue
 
-| Score | Treatment |
+With no human gate, confidence bands become **automatic policy**:
+
+| Score | What happens |
 |---|---|
-| `>= 0.85` | **Recommended accept** — pre-checked in the review UI, still needs a human click |
-| `0.50 – 0.85` | **Needs review** — unchecked |
-| `< 0.50` | Parked behind a "show low confidence" toggle; kept in `analysis.json` |
-| `contested` or cycle-breaking | **Forced review regardless of score** |
+| `>= LATTICE_WRITE_THRESHOLD` (default **0.80**) | Written to GitHub as a real `blocked_by` edge |
+| below it | Kept in the store and used by the scheduler, **not** written to GitHub |
+| `contested` | Never written, whatever the score |
+
+That split is deliberate and worth explaining out loud. The graph we *schedule* against can afford to be speculative — a wrong soft edge only mis-orders our own suggestions, and the next run corrects it. A `blocked_by` write is visible to every human and every tool touching the repo, so it holds a higher bar.
+
+The threshold is one env var. `0.95` is the conservative deployment; `1.0` writes nothing and makes Lattice read-only against GitHub while still scheduling internally.
 
 ---
 
-## The receipt comment
+## L6 · Make acyclic
 
-GitHub's dependency API stores no reasoning. When an edge is applied, post this on the blocked issue:
+Fully automatic — see [`03-graph-scheduling.md`](03-graph-scheduling.md#cycle-detection-and-breaking). The lowest-weight edge on each cycle is dropped, `given` edges are never touched, and every break is recorded with what was cut and what the alternatives were.
 
-```markdown
-🔗 **Dependency recorded:** blocked by #12
+Then **transitive reduction**: if A→B, B→C and A→C, drop A→C. Halves the visual clutter and the number of GitHub writes.
 
-> data_contract · confidence 0.91 · inferred by Lattice (stealth/ox-alpha), approved by @handle
+---
 
-**Why:** #23 queries the edges table that #12 defines.
-**Evidence:** "returns EdgeCandidate[] from analysis.json" — from #23
+## L7 · Apply
 
-<sub>Reasoning is not stored by GitHub's dependency API. This comment is the audit trail.</sub>
-```
+Automatic, idempotent, rate-limited. Diff against what GitHub already has, write only the difference, space writes ~1.2s apart. See [`09-github-api-notes.md`](09-github-api-notes.md#write-path-shape).
 
-Free, permanent, and legible to anyone who never runs Lattice.
+Two rules that keep an automatic writer from becoming a vandal:
+
+- **Never delete a `given` edge.** A human or another tool put it there. The pipeline only adds to that set.
+- **Prune its own stale edges.** An edge Lattice wrote on a previous run that is no longer inferred must be removed, or the graph accretes garbage forever. Track authorship in the store so we know which edges are ours to remove — this is why the store records who wrote each edge.
+
+> **No receipt comments.** An earlier design posted a comment on each blocked issue explaining the edge. **Cut** — it's noise on every issue, it doesn't survive re-runs cleanly, and it turns a quiet background process into a notification spammer. The reasoning lives in the store and is retrievable through `explain_dependency` and the UI.
+
+---
+
+## Triggering
+
+The pipeline is not a button. It runs on:
+
+| Trigger | Why |
+|---|---|
+| `issues` events — opened, edited, closed, reopened, labeled | The backlog changed. Debounce so an editing spree is one run. |
+| Hourly schedule | Backstop for missed or dropped events. |
+| `workflow_dispatch` | Manual re-run, for the demo. |
+| `report_progress` from an agent | A completion changes the ready set immediately. |
+
+**Incremental where possible.** If one issue changed, re-infer only the clusters containing it and re-run the graph maths, which is cheap and needs no model call. Full re-inference is the fallback, not the default — it is also what protects the daily request quota.
+
+Every run is recorded in the store with its trigger, request count, edge counts and duration. See [`11-graph-store.md`](11-graph-store.md).

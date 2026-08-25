@@ -10,17 +10,17 @@ At our scale every algorithm below is exact. No approximation is needed except w
 
 Topological scheduling is undefined on a cyclic graph, so this is **load-bearing, not polish**. Build it early.
 
-An LLM asked for pairwise relations *will* produce `A → B → C → A`. So will a room full of humans.
+An LLM asked for pairwise relations *will* produce `A → B → C → A`. So will a room full of humans. Since there is no review gate, the pipeline has to resolve this on its own, every time, without supervision.
 
 ```ts
 const IMMUTABLE = Infinity;
 
 function weight(e: EdgeCandidate): number {
-  if (e.source === 'human')         return IMMUTABLE;              // never auto-remove
-  if (e.source === 'sub_issue')     return 1000;                   // hierarchy, near-immutable
-  if (e.source === 'explicit_text') return 100 + e.confidence * 10; // the author said so
+  if (e.source === 'given')     return IMMUTABLE;   // already in GitHub — never cut
+  if (e.pinned)                 return IMMUTABLE;   // a human nudged it in
+  if (e.source === 'sub_issue') return 1000;        // native hierarchy, near-immutable
   if (e.type === 'ordering_preference') return e.confidence * 0.5;  // cheapest to cut
-  return e.confidence * 10;
+  return e.confidence * 10;                         // inferred: cut by confidence
 }
 
 export function makeAcyclic(edges: Edge[]): { dag: Edge[]; breaks: CycleBreak[] } {
@@ -38,16 +38,18 @@ export function makeAcyclic(edges: Edge[]): { dag: Edge[]; breaks: CycleBreak[] 
       const victim = internal.reduce((a, b) => weight(b) < weight(a) ? b : a);
 
       if (weight(victim) === IMMUTABLE) {
-        // Everything in this cycle is human-asserted. We do NOT guess.
+        // Every edge here is `given` — recorded in GitHub by a human or another
+        // tool. Cutting one would overwrite their data, so we drop the component
+        // from scheduling instead and flag it. GitHub is left untouched.
         breaks.push({ cycle: shortestCycleThrough(internal, comp), victim: null,
-                      reason: 'unresolvable_requires_human' });
+                      reason: 'unresolvable_given_cycle' });
         cur = cur.filter(e => !(inSet.has(e.blocked) && inSet.has(e.blockedBy)));
         continue;
       }
 
       breaks.push({
-        cycle: shortestCycleThrough(internal, comp),   // for the UI: 12 -> 19 -> 23 -> 12
-        victim,
+        cycle: shortestCycleThrough(internal, comp),   // recorded: 12 -> 19 -> 23 -> 12
+        victim,                                        // cut automatically
         alternatives: internal.filter(e => e !== victim)
                               .sort((a, b) => weight(a) - weight(b)).slice(0, 3),
         reason: 'lowest_weight_arc_on_cycle',
@@ -68,11 +70,12 @@ export function makeAcyclic(edges: Edge[]): { dag: Edge[]; breaks: CycleBreak[] 
 ### Four design points worth stating in the demo
 
 1. **Minimum feedback arc set is NP-hard.** This is a greedy weighted heuristic and the README says so. Honesty scores.
-2. **Removed edges are never silently dropped.** Each break becomes a review item rendering the actual cycle (`#12 → #19 → #23 → #12`) with the chosen victim and up to three alternatives as radio buttons. **The human picks which link to cut.**
+2. **This is fully automatic. Nothing escalates to a human.** Each break is *recorded* — the actual cycle (`#12 → #19 → #23 → #12`), the chosen victim, and the top alternatives — and the pipeline continues. The record is for explaining afterwards, not for approving beforehand.
 
-   This is the single best "sensible human checkpoint" moment in the project — the machine found a contradiction it could not resolve alone and escalated. Do not automate it away.
-3. **Handle GitHub's own rejection.** If `POST blocked_by` returns 422 because GitHub detects a cycle against edges already in the repo, record it as `github_rejected_cycle` and route it to the same review UI. Don't crash the batch.
-4. **Eades–Lin–Smyth** (compute a vertex order, delete back-edges) is ~40 lines and beats greedy globally. Build greedy first — it's easier to narrate on stage. ELS only if there's spare time.
+   The weighting is what makes that safe: `given` edges (already recorded in GitHub) are immutable, so the algorithm can only ever cut something the model inferred. **The worst case is that we mis-order our own suggestions and the next run corrects it.**
+3. **All-immutable cycles.** If every edge in a cycle is `given`, the pipeline cannot cut anything without overwriting human data. It drops the whole component from the *scheduling* graph, marks those issues unschedulable with `reason: 'unresolvable_given_cycle'`, and leaves GitHub untouched. Surface it in the UI as a warning; do not guess.
+4. **Handle GitHub's own rejection.** If `POST blocked_by` returns 422 because GitHub detects a cycle against edges already in the repo, record `github_rejected_cycle` and continue the batch. Don't crash.
+5. **Eades–Lin–Smyth** (compute a vertex order, delete back-edges) is ~40 lines and beats greedy globally. Build greedy first — it's easier to narrate. ELS only if there's spare time.
 
 ---
 
@@ -183,4 +186,4 @@ These are cheap and they are the ones that matter:
 - **Known DAG** → assert wave membership, critical path, blast radius.
 - **Planted cycle** → assert it is broken at the lowest-weight edge and reported in `breaks`.
 - **Diamond** `A→B, A→C, B→D, C→D` → assert transitive reduction leaves it intact (nothing to remove).
-- **All-human cycle** → assert `reason: 'unresolvable_requires_human'` and that no edge was silently chosen.
+- **All-`given` cycle** → assert `reason: 'unresolvable_given_cycle'`, that no edge was cut, and that the component is excluded from scheduling rather than silently mangled.

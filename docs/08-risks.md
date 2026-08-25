@@ -4,39 +4,45 @@ Put a **"What this doesn't do yet"** section in the README. The judges said unfi
 
 ---
 
-## The eleven
+## The twelve
 
-1. **LLM-inferred edges are opinions, not facts.**
-   *Mitigation:* typed edges, verbatim-evidence requirement, confidence bands, mandatory human gate, committed rejection log. Say it in the README's first paragraph rather than burying it.
+> The first two changed materially when the human approval gate was removed. Read them as a pair.
 
-2. **No ground truth → unverifiable quality claims.**
+
+1. **LLM-inferred edges are opinions, not facts — and they are now written without review.** This is the biggest risk in the project and it went up when we removed the approval gate.
+   *Mitigation, in layers:* typed edges; a verbatim-evidence requirement checked against source text; the write threshold, so only high-confidence edges reach GitHub while speculative ones merely schedule; `given` edges immutable; prune-only-what-we-authored; and a per-run rejection log. Say all of this in the README's first section rather than burying it.
+
+2. **No cheap fallback since the regex layer was cut.** On a repo with no pre-existing `blocked_by`, L1 produces nothing and the graph is entirely model-inferred.
+   *Mitigation:* the response cache and the committed fixture snapshot. Accept that `--no-llm` is now a near-empty graph rather than a degraded one, and say so.
+
+3. **No ground truth → unverifiable quality claims.**
    *Mitigation:* hand-label ~40 candidate pairs from the dogfood corpus (about 30 minutes) and report precision@0.85 and recall. Almost nobody else will have a number.
 
-3. **Dogfooding is circular.** Of course it works on issues we wrote knowing the tool existed.
+4. **Dogfooding is circular.** Of course it works on issues we wrote knowing the tool existed.
    *Mitigation:* also run read-only against a real public backlog and screenshot that graph. Twenty minutes, and it kills the objection a sharp judge *will* raise.
 
-4. **Cycle breaking is a heuristic** and can cut the wrong edge.
-   *Mitigation:* the human resolver with alternatives; README names the algorithm and calls it greedy weighted feedback-arc-set.
+5. **Cycle breaking is a heuristic** and now runs unsupervised.
+   *Mitigation:* `given` edges are immutable, so it can only ever cut something the model inferred — worst case we mis-order our own suggestions and the next run corrects it. Every break records the cycle, the victim and the alternatives. README names the algorithm and calls it greedy weighted feedback-arc-set.
 
-5. **Effort estimates are LLM guesses**, so the critical path's *day count* is soft even though its *shape* is sound.
+6. **Effort estimates are LLM guesses**, so the critical path's *day count* is soft even though its *shape* is sound.
    *Mitigation:* prefer `size:*` labels where present; present the critical path as an ordering with an indicative duration, never as a date.
 
-6. **Secondary rate limits mid-demo.**
+7. **Secondary rate limits mid-demo.**
    *Mitigation:* do the bulk write-back before the demo and show a delta; 1.2s spacing between writes; everything reads from `.lattice/raw.json`.
 
-7. **Copilot latency** — PRs take minutes.
+8. **Copilot latency** — PRs take minutes.
    *Mitigation:* start the run before presenting; show one in flight and one already open.
 
-8. **Branch stacking creates rebase pain** on squash-merge.
+9. **Branch stacking creates rebase pain** on squash-merge.
    *Mitigation:* `wait` is the default policy; stack one level only; demo it once and name the cost out loud.
 
-9. **"GitHub will just build this."**
+10. **"GitHub will just build this."**
    *Mitigation:* don't lead with the visualization. Lead with *the scheduler for agents*. The viz is a consequence, not the product.
 
-10. **We depend on an anonymous stealth model.** Ox Alpha is a preview and can vanish without notice; its provider is unnamed and retains prompts (though not for training).
+11. **We depend on an anonymous stealth model.** Ox Alpha is a preview and can vanish without notice; its provider is unnamed and retains prompts (though not for training).
     *Mitigation:* the entire model layer sits behind one file and one env var, so switching providers is minutes. Say the privacy position out loud in the README — our backlog is public, so it costs us nothing, but anyone pointing Lattice at a private backlog is sending issue text to a third party. Naming that is evidence of judgement, not a weakness.
 
-11. **A judge can't run it.**
+12. **A judge can't run it.**
     *Mitigation:* `DEMO_MODE=1` with a committed fixture snapshot — no GitHub token, no Copilot seat, no OpenRouter key, and they still see the whole app. **This is the single highest-ROI hour in the plan** and it maps directly onto the "Craft" criterion.
 
 ---
@@ -45,7 +51,8 @@ Put a **"What this doesn't do yet"** section in the README. The judges said unfi
 
 | If this fails | Fall back to | Cost |
 |---|---|---|
-| LLM layer slow / expensive / noisy | `--no-llm`. The seeded corpus has enough explicit refs to render a real graph. | 0 — built in the first block |
+| LLM layer slow / expensive / noisy | The response cache, then the committed fixture. `--no-llm` now yields only `given` + hierarchy edges — near-empty on a fresh repo. | 0 |
+| Automatic writes go wrong on a real repo | `LATTICE_WRITE_THRESHOLD=1.0` makes Lattice read-only against GitHub while still scheduling internally | one env var |
 | Model returns malformed / off-schema JSON | Expected — Ox Alpha does not enforce schemas. Zod `safeParse` + one retry with the error fed back; drop the cluster on a second failure | 0 — designed in |
 | **Ox Alpha withdrawn** (stealth preview, no stability guarantee) | Swap `LATTICE_MODEL` to any OpenAI-compatible OpenRouter model. The forced-tool + Zod path works on both | minutes |
 | **OpenRouter 429 / daily quota exhausted** | `--no-llm` or `DEMO_MODE=1`; disk cache means re-runs cost nothing | 0 — if the cache exists |

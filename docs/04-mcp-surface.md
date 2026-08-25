@@ -6,9 +6,11 @@ Mounted at `/api/mcp`, Streamable HTTP, bearer auth from `COPILOT_MCP_LATTICE_TO
 
 ## The design principle, stated on stage
 
-> **Read tools are free. Write tools go to humans.**
+> **The graph is a shared, self-maintaining substrate. Anything that learns something puts it back.**
 
-No MCP tool ever mutates a GitHub dependency. `propose_dependency` queues an edge for human review; that's it. This is the project's central claim about agentic collaboration — do not route around it for convenience.
+There is no approval queue. When an agent discovers a real blocker mid-run it calls `report_dependency`, and that edge enters the graph like any other — scored, validated by the same guards, subject to the same write threshold. The next agent to ask "what's ready?" gets a better answer because the previous one worked.
+
+That's the collaboration claim: **the teammates share a workspace that gets more accurate as any of them works in it**, human or not.
 
 ## Why this isn't a GitHub API wrapper
 
@@ -17,6 +19,8 @@ The official GitHub MCP server already exposes issue reads and writes. Ours expo
 ---
 
 ## The seven tools
+
+All reads are served from the store, never by recomputing or calling GitHub. See [`11-graph-store.md`](11-graph-store.md).
 
 ### 1 · `list_ready_work` — the main event
 
@@ -43,7 +47,7 @@ claim_next_issue({ agent_id: string, lease_minutes?: number = 45, area?: string 
   | { claimed: false, reason: 'no_ready_work' | 'all_claimed', next_available_at? }
 ```
 
-Atomic, so N parallel agents don't collide. Leases live in `.lattice/leases.json` with a TTL; expired leases are reclaimed on read.
+Atomic, so N parallel agents don't collide. Leases live in the store with a TTL; expired leases are reclaimed on read.
 
 **This is the tool that makes Lattice a scheduler rather than a report.** It is also the most direct answer to the hackathon's question — it is literally the protocol by which human and non-human teammates avoid stepping on each other.
 
@@ -65,10 +69,12 @@ Everything the agent needs to start, without re-reading the whole backlog. `what
 
 ```ts
 explain_dependency({ blocked: number, blocked_by: number })
- -> { type, confidence, source, rationale, evidence, approved_by, approved_at }
+ -> { type, confidence, source, rationale, evidence, first_seen_run, written_to_github }
 ```
 
-The audit trail, exposed to the agent too. If an agent thinks an edge is wrong, it can see *why* the edge exists before arguing with it.
+The reasoning, exposed to the agent. **This is what replaced receipt comments** — rather than spamming every issue with a comment explaining its blockers, the explanation is retrievable on demand from the store.
+
+If an agent thinks an edge is wrong, it can see the evidence before arguing with it — and then `report_dependency` the correction.
 
 ### 5 · `report_progress` — the graph delta
 
@@ -88,21 +94,24 @@ report_progress({
 
 `newly_ready` is the closing beat of the demo: the agent finishes, and the graph immediately tells it what it just unlocked. **That's what turns a graph into a control loop rather than a report.**
 
-### 6 · `propose_dependency` — the human gate
+### 6 · `report_dependency` — the feedback loop
 
 ```ts
-propose_dependency({
+report_dependency({
   agent_id: string,
   blocked: number,
-  blocked_by: number | { new_issue_title: string },
+  blocked_by: number,
   rationale: string,
-  evidence: string
-}) -> { status: 'queued_for_human_review', review_url, queue_position }
+  evidence: string          // verbatim, validated like any other edge
+}) -> { accepted: boolean, reason?: string, written_to_github: boolean,
+        graph_delta: { newly_blocked: number[] } }
 ```
 
-Lands in the **same** `/review` queue as LLM-inferred edges, with `source: 'agent_reported'`. Never auto-applied.
+An agent that hits an unrecorded blocker records it. The edge goes through **the same validators** as model-inferred edges — evidence must be real, IDs must exist, it must not contradict a `given` edge — and then through the same write threshold.
 
-Say this on stage: *"the agent can propose, only a human can commit."*
+`source: 'agent_reported'`, confidence 0.9: an agent that actually tried to do the work and hit a wall is better evidence than a model reading titles.
+
+This closes the loop that makes the system self-correcting. Without it, an agent hitting an unrecorded blocker has two bad options — work around it silently and produce something that must be redone, or fail. With it, **the graph gets better every time an agent runs.**
 
 ### 7 · `simulate_completion` — the "what if"
 

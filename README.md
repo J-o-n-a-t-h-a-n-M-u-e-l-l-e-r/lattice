@@ -2,7 +2,9 @@
 
 **A backlog is a flat list pretending to be a plan.**
 
-Lattice infers the dependency graph hidden in your GitHub issues, writes it into GitHub's *native* issue-dependency model with a human in the loop, and then serves the resulting schedule to coding agents over MCP — so one expensive reasoning pass becomes the scheduler for every cheap agent run after it.
+Lattice infers the dependency graph hidden in your GitHub issues, writes it into GitHub's *native* issue-dependency model, and serves the resulting schedule to coding agents over MCP — so one expensive reasoning pass becomes the scheduler for every cheap agent run after it.
+
+It runs on its own. Issue events and a schedule trigger it; nobody clicks anything.
 
 > Microsoft Hackathon 2026 · Challenge: *Collaboration using GitHub Planning & Tracking Tools in the Agentic Age*
 
@@ -25,29 +27,33 @@ So: **the schema exists, the data doesn't, and the view doesn't.**
 ## What Lattice does
 
 ```
-GitHub Issues ──► inference ──► candidate edges (type · confidence · verbatim evidence)
-                                        │
-                                 human review gate
-                                        │
-                        ┌───────────────┴───────────────┐
-                        ▼                               ▼
-            native GitHub blocked_by            derived schedule
-            (source of truth)                   (waves · critical path · blast radius)
-                                                        │
-                                        ┌───────────────┴───────────────┐
-                                        ▼                               ▼
-                                  graph view                      MCP server
-                                  (human: what's next)      (agent: what's next,
-                                                             what's parallel, claim)
+issue events ──► inference ──► edges (type · confidence · verbatim evidence)
+   / schedule                          │
+                              validate · score · make acyclic
+                                       │
+                       ┌───────────────┴───────────────┐
+                       ▼                               ▼
+           native GitHub blocked_by              the store
+           (edges above the threshold)     (reasoning · schedule · cache)
+                                                       │
+                                       ┌───────────────┴───────────────┐
+                                       ▼                               ▼
+                                 graph view                      MCP server
+                                 (human: what's next)      (agent: what's next,
+                                                            what's parallel, claim)
 ```
 
-The one architectural commitment: **approved edges live in GitHub, not in Lattice.** Delete this tool and the value stays. `.lattice/` holds only the *reasoning* GitHub has nowhere to put — rationale, evidence, confidence, and who approved what.
+The one architectural commitment: **committed edges live in GitHub, not in Lattice.** Delete this tool and the value stays, visible to every other tool touching the repo. The store holds what GitHub has nowhere to put — rationale, evidence, confidence, the rejected and sub-threshold edges, the derived schedule, and the model response cache.
 
 ## Why this answers the challenge
 
 The hackathon asks: *"what does good collaboration look like when part of your team isn't human?"*
 
-Coordination between human and non-human teammates **is scheduling**. Lattice makes the ordering explicit, keeps a human in the loop on every edge that gets committed, and then lets agents query the result instead of guessing at it. Agents may *propose* a dependency; only a human commits one.
+Coordination between human and non-human teammates **is scheduling** — and a scheduler that needs a human to approve each decision isn't a scheduler, it's a queue with extra steps.
+
+So Lattice maintains the ordering by itself, continuously, and both kinds of teammate read from the same graph. Agents don't just consume it: an agent that hits an unrecorded blocker reports it back, and the graph is more accurate for whoever asks next.
+
+**The shared workspace gets better as anyone works in it.** Humans stay in control by correcting it — pinning an edge, suppressing one, or just editing `blocked_by` on GitHub, which the next run picks up as ground truth — rather than by standing in front of it.
 
 ## Status
 
@@ -68,6 +74,7 @@ Coordination between human and non-human teammates **is scheduling**. Lattice ma
 | [`docs/08-risks.md`](docs/08-risks.md) | Honest weaknesses, fallbacks, stop-loss rules |
 | [`docs/09-github-api-notes.md`](docs/09-github-api-notes.md) | Verified endpoints, headers, and the gotchas that will bite |
 | [`docs/10-model-provider.md`](docs/10-model-provider.md) | OpenRouter + Ox Alpha: setup, schema caveat, rate limits, privacy |
+| [`docs/11-graph-store.md`](docs/11-graph-store.md) | Where the graph is persisted, and the three cache layers |
 | [`AGENTS.md`](AGENTS.md) | How agents should work in this repo |
 
 ## Quickstart

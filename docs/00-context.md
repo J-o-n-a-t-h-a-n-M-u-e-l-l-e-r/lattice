@@ -15,10 +15,23 @@ Entries are expected to use GitHub's planning and tracking primitives — Issues
 | Criterion | What they said | How Lattice answers it |
 |---|---|---|
 | **Answers the challenge** | *"Does it actually say something about collaboration in the agentic age?"* | Coordination between human and non-human teammates **is** scheduling. Not a generic AI feature with a collaboration label on it. |
-| **Agentic depth** | *"Are agents doing meaningful work, with sensible human checkpoints — or is AI bolted on?"* | The agent does the genuinely hard part (semantic inference over a whole backlog). The human approves every edge before it is written. Agents may propose dependencies; only humans commit them. |
+| **Agentic depth** | *"Are agents doing meaningful work, with sensible human checkpoints — or is AI bolted on?"* | The model does the genuinely hard part — semantic inference over a whole backlog — and it runs unsupervised. **See the note below: this criterion is the one we trade against.** |
 | **Craft** | *"Does it work? Can someone else run it from your README?"* | `DEMO_MODE=1` fixture path means a judge with no tokens still sees the whole app. Budget real time for the README — it is scored. |
-| **Collaboration, shown** | *"Your issues and board are part of the submission. We'd rather see a messy honest trail than a tidy fake one."* | We dogfood: our own issues, analysed by our own tool. `.lattice/decisions.json` is committed, so git history literally contains a record of a human overruling a model. |
+| **Collaboration, shown** | *"Your issues and board are part of the submission. We'd rather see a messy honest trail than a tidy fake one."* | We dogfood: our own issues, analysed by our own tool. Run history and the rejection log are queryable, so the trail of what the system proposed, rejected and cut is visible per run. |
 | **Demo** | *"Can you make a stranger understand it in two minutes?"* | See [`07-demo-script.md`](07-demo-script.md). Designed backwards from the two minutes. |
+
+### ⚠️ The deliberate trade on "Agentic depth"
+
+The criterion asks for *"sensible human checkpoints"*. **Lattice has no approval gate**, by design: a scheduler that stops for a human on every edge is not a scheduler. This is a real risk against that criterion and we should meet it head-on rather than hope it isn't noticed.
+
+The argument to make:
+
+- **The checkpoints are structural, not procedural.** Guards, a write threshold, immutable `given` edges, and prune-only-what-we-authored are all constraints on what the system may do unsupervised. That is a design that *earns* autonomy rather than one that skipped the question.
+- **Two tiers of commitment.** Speculative edges schedule but never reach GitHub; only high-confidence ones get written. The blast radius of being wrong is bounded and self-correcting on the next run.
+- **Humans correct rather than approve.** Pin, suppress, or edit `blocked_by` directly on GitHub. Control without a bottleneck.
+- **Agents feed the graph.** `report_dependency` means the system gets more accurate as work happens — which is a more interesting answer to "collaboration with non-human teammates" than a human clicking approve 25 times.
+
+Be ready to say this in one breath if a judge asks. It is a defensible position, but only if it's argued rather than glossed over.
 
 Also stated: **"Being unfinished is not disqualifying. A half-built thing with clear thinking beats a polished thing with none."** And, on the honest-retro field: **"Honesty scores well."**
 

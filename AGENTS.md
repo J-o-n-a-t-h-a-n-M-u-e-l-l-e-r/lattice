@@ -4,14 +4,14 @@ Read this before changing anything. It applies to Copilot coding agent, Claude C
 
 ## What this project is
 
-Lattice infers dependency edges between GitHub issues, gets a human to approve them, writes them into GitHub's native `blocked_by` model, and serves the resulting schedule to coding agents over MCP. See [`README.md`](README.md) for the pitch and [`docs/01-architecture.md`](docs/01-architecture.md) for the component map.
+Lattice infers dependency edges between GitHub issues, writes the confident ones into GitHub's native `blocked_by` model, and serves the resulting schedule to coding agents over MCP. It runs automatically on issue events and a schedule — there is no approval step and no button. See [`README.md`](README.md) for the pitch and [`docs/01-architecture.md`](docs/01-architecture.md) for the component map.
 
 ## Ground rules
 
-1. **GitHub is the source of truth for approved edges.** Never invent a side database for dependencies. `.lattice/` stores reasoning and runtime state only.
-2. **No agent writes a dependency.** Agents may call `propose_dependency`, which queues an edge for human review. Committing an edge to GitHub is a human action. This is the project's central claim — do not route around it.
+1. **GitHub is the source of truth for committed edges.** The store holds reasoning, the derived schedule, and caches — not a competing copy of the dependency data.
+2. **Automatic writes are earned by constraints, not by supervision.** There is no review queue, so the guards in `validate.ts`, the write threshold, immutable `given` edges, and prune-only-what-we-authored are what keep the system honest. Weakening any of them is not a shortcut, it's removing the safety rail.
 3. **The DAG invariant is load-bearing.** `makeAcyclic()` must throw if the graph is still cyclic after cycle-breaking. Never weaken that assertion to make a test pass.
-4. **Every inferred edge carries verbatim evidence.** If code drops the `evidence` field or stops validating it against the source text, the human review gate becomes theatre. Guard it.
+4. **Every inferred edge carries verbatim evidence, validated against source text.** Nothing downstream re-checks it — an edge whose evidence can't be verified is one nobody can audit after it has been written to a real issue. Guard it.
 5. **Read before you write.** Check [`docs/09-github-api-notes.md`](docs/09-github-api-notes.md) before touching any GitHub call — several endpoints have non-obvious requirements that will silently produce wrong behaviour.
 
 ## Working on an issue
@@ -19,7 +19,7 @@ Lattice infers dependency edges between GitHub issues, gets a human to approve t
 - The issue title is prefixed with its workstream (`[F]`, `[G]`, `[I]`, `[S]`, `[U]`, `[M]`, `[C]`, `[X]`). See [`docs/06-workstreams.md`](docs/06-workstreams.md).
 - Issue bodies state their own dependencies in prose ("depends on", "blocked by"). **Respect them** — if your issue depends on a type or interface another issue defines, and that issue isn't done, say so rather than inventing a competing shape.
 - Stay inside the files listed under **Scope** in the issue body. Five people and several agents are working this repo in parallel; the scope list is the collision-avoidance mechanism.
-- If you discover the issue is genuinely blocked by something not listed, **say so in a comment and stop** rather than expanding scope. If the Lattice MCP server is available to you, call `propose_dependency` instead.
+- If you discover the issue is genuinely blocked by something not listed, **say so and stop** rather than expanding scope. If the Lattice MCP server is available, call `report_dependency` so the graph learns it.
 
 ## Conventions
 

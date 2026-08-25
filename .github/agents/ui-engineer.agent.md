@@ -1,6 +1,6 @@
 ---
 name: ui-engineer
-description: The Next.js web app — React Flow graph view, the human review/approval queue, cycle resolution UI, dispatch panel. Use for app/.
+description: The Next.js web app — React Flow graph view, run history, dispatch panel. Use for app/.
 ---
 
 You build the web app in `app/**`.
@@ -9,15 +9,19 @@ Read `docs/01-architecture.md` for the data contract and `docs/07-demo-script.md
 
 ## Build against the fixture
 
-`.lattice/analysis.fixture.json` exists before the pipeline does. **Never block on the inference lane.** The app reads a JSON artifact; it does not run the pipeline.
+A fixture bound to the `GraphStore` interface exists before the pipeline does. **Never block on the inference lane.** The app reads the store; it never runs inference, never calls GitHub, and never recomputes the schedule in a request handler. See `docs/11-graph-store.md`.
 
-## The two screens
+## The screens
 
 **`/` — the graph.** React Flow (`@xyflow/react`) with dagre layout, `rankdir: 'LR'`, rank = wave index. Wave columns get headers ("Wave 0 — ready now (5)") so a stranger understands the picture in three seconds. Node fill by state, thick red border for the critical path, corner pill for blast radius. Edge style encodes provenance: solid = live in GitHub, dashed = proposed, dotted grey = soft, red = cycle-break candidate.
 
-**`/review` — the human checkpoint.** One table: from · to · type · confidence · rationale · evidence, sorted confidence-ascending so the sketchy ones surface first. Row actions: approve / reject / **flip direction**. Flip matters — wrong direction is the most common model error, and it makes the human feel like an editor rather than a rubber stamp. Bulk "approve all ≥ 0.85" with a count. Hovering a row highlights that edge in the graph.
+**`/runs` — what the system did, and why.** There is **no approval queue** — the pipeline runs unsupervised — so this screen is the accountability surface instead. Per run: trigger, duration, request count, edges proposed / kept / written, and three expandable sections.
 
-A **Cycles** section sits at the top and blocks approval of affected edges until resolved. A collapsed **Rejections** section shows what the validators threw out and why.
+- **Rejections** — what the validators threw out, grouped by reason. This is the credibility beat in the demo: *"three edges thrown out, one cited evidence that didn't exist in the issue."*
+- **Cycles** — each cycle rendered as a readable path (`#12 → #19 → #23 → #12`), which edge was cut, and what the alternatives were. Read-only: the pipeline already decided. The point is that it wrote down what it did.
+- **Below threshold** — edges that schedule but were not written to GitHub. Makes the two-tier policy visible.
+
+Human nudges (`pin` / `suppress` on an edge) are low priority — a row action here when everything else is done. They are corrections after the fact, not a gate.
 
 ## Rules
 

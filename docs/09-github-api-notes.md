@@ -36,7 +36,10 @@ Space writes ~1.2s apart. On 403/429, back off and retry. Do not burst 30 edges 
 
 ```ts
 const existing = await getBlockedBy(number);          // diff first — never duplicate
-const toAdd = approved.filter(e => !existing.has(e.blockedByDatabaseId));
+const toWrite = edges.filter(e => e.writeBack && e.score >= WRITE_THRESHOLD);
+const toAdd = toWrite.filter(e => !existing.has(e.blockedByDatabaseId));
+// and prune edges WE wrote that are no longer inferred — never `given` ones
+const toRemove = existing.filter(e => e.authoredBy === 'lattice' && !inferred.has(e));
 
 for (const e of toAdd) {
   await sleep(1200);
@@ -46,7 +49,6 @@ for (const e of toAdd) {
       { ...ctx, issue_number: e.blocked,
         issue_id: e.blockedByDatabaseId,
         headers: { 'X-GitHub-Api-Version': '2026-03-10' } });
-    await postReceiptComment(e);
   } catch (err) {
     if (err.status === 403 || err.status === 429) { await backoff(err); retry(); }
     else if (err.status === 422) record(e, 'github_rejected_maybe_cycle');
@@ -57,7 +59,9 @@ for (const e of toAdd) {
 
 Idempotent (diffs first) and rate-limit aware. Plus a `--dry-run` that prints every HTTP call it *would* make.
 
-**422 usually means GitHub detected a cycle** against edges already in the repo. Record it and route to the review UI — don't crash the batch.
+**422 usually means GitHub detected a cycle** against edges already in the repo. Record it as `github_rejected_cycle` and continue the batch — don't crash.
+
+**Pruning is as important as writing.** An automatic writer that only ever adds will accrete stale edges forever. Remove edges we authored that are no longer inferred; never touch a `given` edge someone else created. The store's `authored_by` column is what makes that distinction possible.
 
 ---
 

@@ -6,11 +6,11 @@ Five people, five lanes. The lanes are chosen so that **the seams between them a
 
 | # | Lane | Owns | Meets other lanes at |
 |---|---|---|---|
-| **F** | Foundation | scaffold, `types.ts`, store, fixtures | `EdgeCandidate` + `analysis.json` shape — *everyone* |
-| **G** | GitHub I/O | `src/lib/github/**` | `raw.json` (out), approved edges (in) |
-| **I** | Inference | `src/lib/infer/**`, `scripts/analyze.ts` | `raw.json` (in), `analysis.json` (out) |
-| **S** | Graph & scheduling | `src/graph/**` | pure functions; `analysis.json` in, schedule out |
-| **U** | Web UI | `app/**` | `analysis.json` + schedule (in), approvals (out) |
+| **F** | Foundation | scaffold, `types.ts`, **the store**, fixtures | `EdgeCandidate` + the store interface — *everyone* |
+| **G** | GitHub I/O | `src/lib/github/**` | store (out), written edges (in) |
+| **I** | Inference | `src/lib/infer/**`, `scripts/analyze.ts`, triggers | store in, store out |
+| **S** | Graph & scheduling | `src/graph/**` | pure functions; edges in, schedule out |
+| **U** | Web UI | `app/**` | reads the store |
 | **M** | MCP & dispatch | `app/api/mcp/**`, `src/lib/github/copilot.ts`, `scripts/agent.ts` | schedule (in), GitHub assignment (out) |
 
 Six labels, five people — **F is shared setup done together in hour one**, then everyone moves into their lane.
@@ -31,7 +31,7 @@ Two decisions do all the work:
 
 1. **`types.ts` is written first, together, in hour one.** Every lane codes against it. This is issue `[F] Define the shared types contract` and it genuinely blocks everything — which is a nice bit of dogfooding, since our own tool will discover exactly that edge.
 
-2. **`.lattice/analysis.fixture.json` exists before the pipeline does.** The UI and MCP lanes build against a hand-written fixture from hour one and never wait for the inference lane. This is the single most important scheduling decision in the plan.
+2. **A fixture bound to the `GraphStore` interface exists before the pipeline does.** The UI and MCP lanes read that interface from hour one and never wait for the inference lane. This is the single most important scheduling decision in the plan — and it doubles as `DEMO_MODE`.
 
 The graph lane (S) is pure — no I/O — so it never conflicts with anyone and can be developed and tested completely standalone.
 
@@ -43,7 +43,7 @@ Hour 0-1   EVERYONE:  repo, scaffold, types.ts, seed the dogfood issues
 Hour 1+    G: ingest ──────────► write-back
            I: deterministic ───► candidates ──► LLM ──► validate ──► merge
            S: SCC ────────────► acyclic ────► schedule ──► blast radius
-           U: shell ──────────► graph view ──► review queue
+           U: shell ──────────► graph view ──► run history
            M: mcp route ──────► tools ──────► copilot dispatch
 ```
 

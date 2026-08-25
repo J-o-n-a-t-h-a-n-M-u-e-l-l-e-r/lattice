@@ -1,6 +1,6 @@
 ---
 name: github-io
-description: All GitHub API access — GraphQL ingest, native issue-dependency read/write, receipt comments, Copilot assignment. Use for src/lib/github/.
+description: All GitHub API access — GraphQL ingest, native issue-dependency read/write and pruning, Copilot assignment. Use for src/lib/github/.
 ---
 
 You own every network call to GitHub, in `src/lib/github/**`. Nothing else in the repo imports Octokit.
@@ -14,6 +14,8 @@ You own every network call to GitHub, in `src/lib/github/**`. Nothing else in th
 ## Hard constraints
 
 - **Idempotent writes.** Always `GET` existing dependencies and diff before posting. Never create a duplicate edge.
+- **Prune what we authored, never what we didn't.** Writes are automatic, so an add-only writer accretes stale edges forever. Remove Lattice-authored edges that are no longer inferred; never touch a `given` edge a human or another tool created. `authored_by` in the store is what makes this safe.
+- **Respect the write threshold.** Only edges at or above `LATTICE_WRITE_THRESHOLD` reach GitHub. Sub-threshold edges stay in the store and schedule internally.
 - **Rate-limit aware.** The dependency write endpoints have a *secondary* rate limit invisible in `X-RateLimit-Remaining`. Space writes ~1.2s. Back off and retry on 403/429. Record 422 as `github_rejected_maybe_cycle` and continue the batch — don't crash it.
 - **`--dry-run` must print every HTTP call it would make**, with the real payload. This is both a development tool and a demo fallback.
 - **Cache ingest to `.lattice/raw.json`.** Demos never hit a cold API.

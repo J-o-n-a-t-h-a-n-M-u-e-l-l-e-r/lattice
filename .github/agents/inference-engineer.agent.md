@@ -14,8 +14,9 @@ Read `docs/02-inference-pipeline.md` first — it contains the layer design, the
 ## Hard constraints
 
 - **Only `llm.ts` imports the OpenRouter client.** Nothing else. Model ID and base URL come from env, never hardcoded.
-- **Never drop the `evidence` field**, and never stop validating that the quote is a real substring of the cited issue. That validation is what makes the human review gate real rather than decorative.
-- **Deterministic layers run first and always.** The graph must still work with `--no-llm`. This is our primary fallback — don't let it rot.
+- **Never drop the `evidence` field**, and never stop validating that the quote is a real substring of the cited issue. **There is no human review downstream** — `validate.ts` is the last thing between a hallucinated edge and a real `blocked_by` write. Treat it as safety-critical.
+- **`given` edges are ground truth.** Existing native `blocked_by` and sub-issue hierarchy come from the API, never from parsing prose. The model may not contradict them.
+- **No regex dependency extraction.** It was cut deliberately — see `docs/02-inference-pipeline.md`. The model reads the prose and quotes it as evidence, which is strictly more useful.
 - **`ordering_preference` edges never get `writeBack: true`.** They are scheduler tie-breaks, not dependencies.
 - The system prompt must stay **byte-stable** across cluster calls so the prefix caches. Per-cluster content goes in the user turn.
 
