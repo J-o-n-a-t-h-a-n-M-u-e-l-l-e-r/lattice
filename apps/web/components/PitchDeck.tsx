@@ -359,8 +359,7 @@ export function PitchDeck() {
       </section>
 
       <footer className={styles.pitchFooter}>
-        <span>Alba · Albert · Jonathan · Nicolas · Tong</span>
-        <span>Microsoft Summer Mini-Hackathon 2026</span>
+        Alba · Albert · Jonathan · Nicolas · Tong&nbsp;&nbsp;—&nbsp;&nbsp;Microsoft Summer Mini-Hackathon 2026
       </footer>
       <output className={styles.slideNumber} aria-label={`Slide ${slide + 1}`}>
         {String(slide + 1).padStart(2, '0')}
