@@ -23,6 +23,7 @@ export default function RootLayout({ children }: { children: React.ReactNode }) 
           <nav className="flex items-center gap-4 text-sm" style={{ color: 'var(--muted)' }}>
             <Link href="/" className="hover:text-white transition-colors">Graph</Link>
             <Link href="/runs" className="hover:text-white transition-colors">Runs</Link>
+            <Link href="/pitch" className="hover:text-white transition-colors">Pitch</Link>
           </nav>
           <span className="ml-auto text-xs" style={{ color: 'var(--muted)' }}>
             GitHub is a data source, not a data store
