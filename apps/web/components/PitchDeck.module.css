@@ -1,0 +1,1176 @@
+.deck {
+  --navy: #f7f8fa;
+  --blue: #0067b8;
+  --light-blue: #0067b8;
+  --paper: #18212b;
+  --ink: #243242;
+  --fog: #5f6f7f;
+  --coral: #a74632;
+  --issue-green: #3fb950;
+  --line: rgba(36, 50, 66, 0.18);
+  background:
+    radial-gradient(circle at 70% 7%, rgba(0, 103, 184, 0.09), transparent 28rem),
+    var(--navy);
+  color: var(--paper);
+  font-family: "Aptos", "Helvetica Neue", Arial, sans-serif;
+  height: 100dvh;
+  inset: 0;
+  isolation: isolate;
+  overflow: hidden;
+  position: fixed;
+  width: 100%;
+  z-index: 40;
+}
+
+
+
+.topbar {
+  align-items: center;
+  display: flex;
+  height: 62px;
+  justify-content: flex-start;
+  left: 0;
+  padding: 0 clamp(1.25rem, 3vw, 3.75rem);
+  position: absolute;
+  right: 0;
+  top: 0;
+  z-index: 10;
+}
+
+.wordmark {
+  align-items: center;
+  display: flex;
+  font-family: "Arial Narrow", "Aptos Display", "Helvetica Neue", sans-serif;
+  font-size: 0.73rem;
+  font-stretch: condensed;
+  font-weight: 900;
+  letter-spacing: 0.15em;
+}
+
+.mark {
+  fill: none;
+  height: 1.45rem;
+  margin-right: 0.65rem;
+  stroke: var(--light-blue);
+  stroke-width: 1.3;
+  width: 1.45rem;
+}
+
+.deckLabel {
+  border-left: 1px solid var(--line);
+  color: var(--fog);
+  font-family: "SFMono-Regular", Consolas, monospace;
+  font-size: 0.56rem;
+  letter-spacing: 0.09em;
+  margin-left: 0.8rem;
+  padding-left: 0.8rem;
+}
+
+.slide {
+  inset: 0;
+  opacity: 0;
+  pointer-events: none;
+  position: absolute;
+  transform: scale(0.985);
+  transition: opacity 400ms ease, transform 500ms cubic-bezier(.22, .7, .25, 1);
+}
+
+.slide.active {
+  opacity: 1;
+  pointer-events: auto;
+  transform: scale(1);
+}
+
+.playbookHeading {
+  left: clamp(1.25rem, 8vw, 9rem);
+  position: absolute;
+  top: clamp(5rem, 9vh, 7rem);
+}
+
+.playbookHeading h1 {
+  color: #18212b;
+  font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Helvetica, Arial, sans-serif;
+  font-size: clamp(1.75rem, 2.9vw, 2.85rem);
+  font-weight: 600;
+  letter-spacing: -0.035em;
+  line-height: 1.1;
+  margin: 0;
+  white-space: nowrap;
+}
+
+.playbookList {
+  display: grid;
+  gap: clamp(0.8rem, 2.1vh, 1.5rem);
+  left: clamp(1.25rem, 8vw, 9rem);
+  list-style: none;
+  margin: 0;
+  padding: 0;
+  position: absolute;
+  right: clamp(1.25rem, 8vw, 9rem);
+  top: clamp(9.5rem, 22vh, 13rem);
+}
+
+.playbookList li {
+  align-items: baseline;
+  display: grid;
+  gap: clamp(0.9rem, 1.8vw, 1.5rem);
+  grid-template-columns: clamp(1.1rem, 1.8vw, 1.6rem) minmax(0, 1fr);
+}
+
+.playbookList li > b {
+  color: #0969da;
+  font-family: "SFMono-Regular", Consolas, monospace;
+  font-size: clamp(0.68rem, 0.85vw, 0.85rem);
+  font-weight: 700;
+  letter-spacing: 0.08em;
+}
+
+.playbookList p {
+  color: #424e5c;
+  font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Helvetica, Arial, sans-serif;
+  font-size: clamp(0.85rem, 1.15vw, 1.12rem);
+  line-height: 1.5;
+  margin: 0;
+}
+
+.playbookList strong {
+  color: #18212b;
+  font-weight: 600;
+}
+
+.playbookHighlight {
+  border: 2px solid transparent;
+  border-radius: 0.6em;
+  box-decoration-break: clone;
+  -webkit-box-decoration-break: clone;
+  display: inline;
+  padding: 0.08em 0.45em;
+  transition: border-color 0.4s ease;
+}
+
+.playbookHighlightActive {
+  border-color: var(--light-blue);
+}
+
+.kicker {
+  color: var(--light-blue);
+  font-family: "SFMono-Regular", Consolas, monospace;
+  font-size: clamp(0.58rem, 0.75vw, 0.75rem);
+  font-weight: 700;
+  letter-spacing: 0.15em;
+  margin: 0;
+}
+
+.introCopy h1,
+.systemHeading h2,
+.demoHeading h2 {
+  font-family: Impact, "Arial Narrow", "Aptos Display", sans-serif;
+  font-stretch: condensed;
+  font-weight: 900;
+  letter-spacing: -0.035em;
+  line-height: 0.91;
+  margin: 1.15rem 0 0;
+  text-transform: uppercase;
+}
+
+.systemHeading h2 em {
+  color: var(--light-blue);
+  font-style: normal;
+}
+
+.issueField {
+  --graph-surface: #f7f8fa;
+  --graph-card: #ffffff;
+  --graph-border: #c9d1dc;
+  --graph-edge: #7b8796;
+  --graph-muted: #657180;
+  height: 100%;
+  inset: 0;
+  overflow: hidden;
+  position: absolute;
+  transform: scale(1);
+  transition: filter 650ms cubic-bezier(.16, 1, .3, 1), transform 650ms cubic-bezier(.16, 1, .3, 1);
+  width: 100%;
+}
+
+.graphSurface {
+  background:
+    radial-gradient(ellipse at 57% 42%, rgba(0, 103, 184, 0.06), transparent 45%),
+    var(--graph-surface);
+  height: 100%;
+  inset: 0;
+  overflow: hidden;
+  position: absolute;
+  width: 100%;
+}
+
+.graphSurface::after {
+  background: radial-gradient(ellipse at center, transparent 30%, rgba(221, 226, 232, 0.52) 88%);
+  content: "";
+  inset: 0;
+  pointer-events: none;
+  position: absolute;
+}
+
+.issueCard {
+  align-items: flex-start;
+  background: rgba(255, 255, 255, 0.94);
+  border: 1px solid rgba(174, 185, 198, 0.9);
+  box-sizing: border-box;
+  box-shadow: 0 12px 28px rgba(35, 48, 63, 0.12);
+  display: flex;
+  gap: 0.35rem;
+  left: var(--chaos-x);
+  padding: 0.48rem 0.58rem;
+  position: absolute;
+  top: var(--chaos-y);
+  transform: translate(-50%, -50%) rotate(var(--tilt));
+  transition:
+    left 900ms cubic-bezier(.16, 1, .3, 1),
+    top 900ms cubic-bezier(.16, 1, .3, 1),
+    background 550ms ease,
+    border-color 550ms ease,
+    box-shadow 550ms ease,
+    transform 900ms cubic-bezier(.16, 1, .3, 1);
+  white-space: normal;
+  width: min(9.8rem, 16vw);
+  z-index: 1;
+  animation: issue-float var(--float-duration) cubic-bezier(.45, .05, .55, .95) var(--float-phase) infinite;
+  will-change: transform;
+}
+
+@keyframes issue-float {
+  0%, 100% {
+    transform: translate(-50%, -50%) rotate(var(--tilt));
+  }
+
+  31% {
+    transform: translate(calc(-50% + var(--arc-x)), calc(-50% + var(--arc-y))) rotate(calc(var(--tilt) - 1.5deg));
+  }
+
+  68% {
+    transform: translate(calc(-50% + var(--drift-x)), calc(-50% + var(--drift-y))) rotate(calc(var(--tilt) + 1.5deg));
+  }
+}
+
+.issueMeta {
+  align-items: center;
+  color: var(--issue-green);
+  display: inline-flex;
+  font-family: "SFMono-Regular", Consolas, monospace;
+  font-size: 0.6rem;
+  gap: 0.28rem;
+  line-height: 1;
+}
+
+.issueMeta svg {
+  fill: none;
+  flex: 0 0 auto;
+  height: 0.76rem;
+  stroke: currentColor;
+  stroke-width: 1.6;
+  width: 0.76rem;
+}
+
+.issueMeta .issueIconDot {
+  fill: currentColor;
+  stroke: none;
+}
+
+.issueCard b {
+  color: var(--ink);
+  flex: 1;
+  line-height: 1.3;
+  min-width: 0;
+  font-size: 0.66rem;
+  font-weight: 650;
+  letter-spacing: 0.01em;
+  overflow-wrap: break-word;
+}
+
+.organized .issueCard {
+  background: var(--graph-card);
+  border-color: var(--graph-border);
+  box-shadow: 0 10px 20px rgba(35, 48, 63, 0.1);
+  left: var(--graph-x);
+  top: var(--graph-y);
+  transform: translate(-50%, -50%) rotate(0);
+  animation: none;
+  will-change: auto;
+}
+
+.edges {
+  fill: none;
+  height: 100%;
+  left: 0;
+  opacity: 0;
+  position: absolute;
+  stroke: var(--graph-edge);
+  stroke-linecap: round;
+  stroke-width: 0.13;
+  top: 0;
+  transition: opacity 700ms ease 450ms;
+  width: 100%;
+  z-index: 0;
+}
+
+.edges path {
+  marker-end: url(#graph-arrow);
+}
+
+.edges marker path {
+  fill: var(--graph-edge);
+}
+
+.organized .edges {
+  opacity: 0.78;
+}
+
+.waveHeaders {
+  inset: 0;
+  opacity: 0;
+  pointer-events: none;
+  position: absolute;
+  transition: opacity 350ms ease 500ms;
+  z-index: 0;
+}
+
+.waveHeader {
+  align-items: baseline;
+  color: var(--graph-muted);
+  display: flex;
+  font-family: "SFMono-Regular", Consolas, monospace;
+  font-size: clamp(0.44rem, 0.58vw, 0.58rem);
+  gap: 0.4rem;
+  left: clamp(1rem, 4vw, 5rem);
+  letter-spacing: 0.08em;
+  position: absolute;
+  top: var(--wave-y);
+  transform: translateY(-50%);
+  text-transform: uppercase;
+}
+
+.waveHeader::after {
+  background: rgba(101, 113, 128, 0.28);
+  content: "";
+  height: 1px;
+  left: 0;
+  position: absolute;
+  top: calc(100% + 0.4rem);
+  width: clamp(5.5rem, 10vw, 9rem);
+}
+
+.waveHeader b {
+  color: #344150;
+  font-weight: 700;
+}
+
+.waveHeader span {
+  color: var(--graph-muted);
+  font-size: 0.9em;
+  letter-spacing: 0.02em;
+  text-transform: none;
+}
+
+.organized .waveHeaders {
+  opacity: 1;
+}
+
+.titleStage .graphSurface {
+  filter: blur(10px);
+  transform: scale(1.025);
+}
+
+.projectTitleReveal {
+  align-items: center;
+  background: rgba(247, 248, 250, 0.18);
+  display: flex;
+  inset: 0;
+  justify-content: center;
+  opacity: 0;
+  padding: 1.5rem;
+  pointer-events: none;
+  position: absolute;
+  text-align: center;
+  transform: scale(0.98);
+  transition: opacity 400ms ease 150ms, transform 650ms cubic-bezier(.16, 1, .3, 1) 150ms;
+  z-index: 3;
+}
+
+.projectTitleLockup {
+  align-items: center;
+  display: flex;
+  flex-direction: row;
+  gap: clamp(0.7rem, 1.5vw, 1.25rem);
+  position: relative;
+  z-index: 1;
+}
+
+.projectLogo {
+  color: #0969da;
+  display: block;
+  height: clamp(3rem, 5.5vw, 5.5rem);
+  width: clamp(3rem, 5.5vw, 5.5rem);
+}
+
+.projectTitleReveal h1 {
+  color: #18212b;
+  font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Helvetica, Arial, sans-serif;
+  font-size: clamp(3rem, 7vw, 7rem);
+  font-weight: 600;
+  letter-spacing: -0.035em;
+  line-height: 1;
+  margin: 0;
+  text-shadow: 0 0.2rem 1rem rgba(255, 255, 255, 0.85);
+}
+
+.pitchFooter {
+  bottom: clamp(1.25rem, 3vw, 3.75rem);
+  color: #5f6f7f;
+  font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Helvetica, Arial, sans-serif;
+  font-size: clamp(0.6rem, 0.85vw, 0.85rem);
+  left: clamp(1.25rem, 3vw, 3.75rem);
+  letter-spacing: 0.01em;
+  line-height: 1.45;
+  position: absolute;
+  white-space: nowrap;
+  z-index: 12;
+}
+
+.titleStage .projectTitleReveal {
+  opacity: 1;
+  transform: scale(1);
+}
+
+.primaryAction svg,
+.controls svg {
+  fill: none;
+  height: 1rem;
+  stroke: currentColor;
+  stroke-width: 1.7;
+  width: 1rem;
+}
+
+.systemHeading {
+  left: clamp(1.25rem, 8vw, 9rem);
+  max-width: 38rem;
+  position: absolute;
+  top: clamp(8rem, 15vh, 12rem);
+}
+
+.systemHeading h2,
+.demoHeading h2 {
+  font-size: clamp(3.2rem, 6.6vw, 7rem);
+}
+
+.systemHeading > p:not(.kicker),
+.demoHeading > p:not(.kicker) {
+  color: var(--fog);
+  font-size: clamp(0.82rem, 1.1vw, 1rem);
+  line-height: 1.6;
+  margin: 1.25rem 0 0;
+  max-width: 31rem;
+}
+
+.systemMap {
+  bottom: clamp(4.5rem, 12vh, 9rem);
+  display: grid;
+  gap: clamp(0.7rem, 2vw, 2rem);
+  grid-template-columns: repeat(3, 1fr);
+  left: clamp(1.25rem, 8vw, 9rem);
+  position: absolute;
+  right: clamp(1.25rem, 8vw, 9rem);
+}
+
+.systemRail {
+  display: flex;
+  left: 0;
+  position: absolute;
+  right: 0;
+  top: 1.9rem;
+  z-index: -1;
+}
+
+.systemRail::before {
+  background: var(--line);
+  content: "";
+  height: 1px;
+  left: 5.5%;
+  position: absolute;
+  right: 5.5%;
+  top: 0.5rem;
+}
+
+.systemRail span {
+  background: var(--light-blue);
+  border-radius: 50%;
+  box-shadow: 0 0 14px var(--light-blue);
+  height: 0.38rem;
+  position: absolute;
+  top: 0.32rem;
+  width: 0.38rem;
+}
+
+.systemRail span:nth-child(1) { left: 5.5%; }
+.systemRail span:nth-child(2) { left: calc(50% - 0.2rem); }
+.systemRail span:nth-child(3) { right: 5.5%; }
+
+.systemStep {
+  background: linear-gradient(145deg, #ffffff, #eef2f6);
+  border-top: 1px solid var(--line);
+  min-height: 12.7rem;
+  padding: 3.2rem clamp(0.85rem, 1.5vw, 1.5rem) 1.25rem;
+  position: relative;
+}
+
+.systemStep .mark {
+  height: 1rem;
+  margin: 0 0 1.3rem;
+  width: 1rem;
+}
+
+.stepNumber {
+  color: var(--light-blue);
+  font-family: "SFMono-Regular", Consolas, monospace;
+  font-size: 0.58rem;
+  position: absolute;
+  right: 1rem;
+  top: 0.8rem;
+}
+
+.systemStep h3 {
+  font-size: clamp(0.9rem, 1.2vw, 1.08rem);
+  letter-spacing: -0.02em;
+  margin: 0;
+}
+
+.systemStep p {
+  color: var(--fog);
+  font-size: clamp(0.72rem, 0.9vw, 0.85rem);
+  line-height: 1.5;
+  margin: 0.55rem 0 0;
+  max-width: 16rem;
+}
+
+.stepFoot {
+  bottom: 1rem;
+  color: var(--light-blue);
+  font-family: "SFMono-Regular", Consolas, monospace;
+  font-size: 0.5rem;
+  left: clamp(0.85rem, 1.5vw, 1.5rem);
+  letter-spacing: 0.08em;
+  position: absolute;
+}
+
+.systemProof {
+  align-items: flex-start;
+  bottom: 1.7rem;
+  display: grid;
+  gap: 1rem;
+  grid-template-columns: 1fr 2fr 1.35fr;
+  left: clamp(1.25rem, 8vw, 9rem);
+  position: absolute;
+  right: clamp(1.25rem, 8vw, 9rem);
+}
+
+.systemProof > span {
+  color: var(--light-blue);
+  font-family: "SFMono-Regular", Consolas, monospace;
+  font-size: 0.57rem;
+  letter-spacing: 0.12em;
+  padding-top: 0.35rem;
+}
+
+.systemProof p {
+  font-size: clamp(0.78rem, 1vw, 0.96rem);
+  line-height: 1.35;
+  margin: 0;
+}
+
+.systemProof div {
+  align-items: baseline;
+  display: flex;
+  justify-content: flex-end;
+  gap: 0.35rem;
+}
+
+.systemProof b {
+  color: var(--light-blue);
+  font-family: Impact, "Arial Narrow", sans-serif;
+  font-size: clamp(1.7rem, 2.4vw, 2.7rem);
+  line-height: 0.7;
+}
+
+.systemProof small {
+  color: var(--fog);
+  font-family: "SFMono-Regular", Consolas, monospace;
+  font-size: 0.5rem;
+  margin-right: 0.65rem;
+}
+
+.demoHeading {
+  left: clamp(1.25rem, 8vw, 9rem);
+  position: absolute;
+  top: clamp(8rem, 15vh, 12rem);
+  z-index: 2;
+}
+
+.demoHeading h2 {
+  max-width: 35rem;
+}
+
+.videoFrame {
+  background: #eaf0f5;
+  border: 1px solid rgba(36, 50, 66, 0.28);
+  box-shadow: 0 22px 80px rgba(35, 48, 63, 0.16);
+  overflow: hidden;
+  position: absolute;
+  right: clamp(1.25rem, 7vw, 8rem);
+  top: clamp(7.5rem, 13vh, 10rem);
+  width: min(46vw, 48rem);
+}
+
+.videoFrame::before {
+  content: "";
+  display: block;
+  padding-top: 56.25%;
+}
+
+.demoVideo,
+.videoFallback {
+  height: 100%;
+  inset: 0;
+  position: absolute;
+  width: 100%;
+}
+
+.demoVideo {
+  background: #eaf0f5;
+  object-fit: cover;
+  opacity: 0;
+  transition: opacity 350ms ease;
+}
+
+.demoVideo.videoReady {
+  opacity: 1;
+}
+
+.videoFallback {
+  align-items: center;
+  background:
+    linear-gradient(130deg, rgba(255, 255, 255, 0.92), rgba(231, 237, 243, 0.82)),
+    radial-gradient(circle at 70% 25%, rgba(0, 103, 184, 0.18), transparent 31%);
+  display: flex;
+  flex-direction: column;
+  justify-content: center;
+  transition: opacity 350ms ease;
+}
+
+.videoReady + .videoFallback {
+  opacity: 0;
+  pointer-events: none;
+}
+
+.videoFallback .mark {
+  height: 2rem;
+  margin: 0 0 1rem;
+  width: 2rem;
+}
+
+.videoFallback strong {
+  font-family: "SFMono-Regular", Consolas, monospace;
+  font-size: clamp(0.55rem, 0.85vw, 0.8rem);
+  letter-spacing: 0.12em;
+}
+
+.videoFallback > span {
+  color: var(--fog);
+  font-family: "SFMono-Regular", Consolas, monospace;
+  font-size: clamp(0.48rem, 0.66vw, 0.62rem);
+  letter-spacing: 0.04em;
+  margin-top: 0.6rem;
+}
+
+.videoFallbackGraph {
+  inset: 0;
+  opacity: 0.65;
+  overflow: hidden;
+  position: absolute;
+}
+
+.videoFallbackGraph::before,
+.videoFallbackGraph::after {
+  border-top: 1px solid rgba(36, 50, 66, 0.3);
+  content: "";
+  left: 6%;
+  position: absolute;
+  transform: rotate(17deg);
+  width: 88%;
+}
+
+.videoFallbackGraph::before { top: 36%; }
+.videoFallbackGraph::after { top: 66%; transform: rotate(-13deg); }
+
+.videoFallbackGraph i {
+  background: #dbe5ee;
+  border: 1px solid rgba(36, 50, 66, 0.5);
+  height: 0.55rem;
+  position: absolute;
+  width: 0.55rem;
+}
+
+.videoFallbackGraph i:nth-child(1) { left: 8%; top: 22%; }
+.videoFallbackGraph i:nth-child(2) { left: 25%; top: 48%; }
+.videoFallbackGraph i:nth-child(3) { left: 48%; top: 18%; }
+.videoFallbackGraph i:nth-child(4) { left: 61%; top: 64%; }
+.videoFallbackGraph i:nth-child(5) { left: 78%; top: 31%; }
+.videoFallbackGraph i:nth-child(6) { left: 89%; top: 77%; }
+
+.videoStamp {
+  background: var(--light-blue);
+  bottom: 0;
+  color: var(--navy);
+  display: flex;
+  font-family: "SFMono-Regular", Consolas, monospace;
+  font-size: clamp(0.42rem, 0.55vw, 0.56rem);
+  gap: 0.6rem;
+  letter-spacing: 0.06em;
+  padding: 0.45rem 0.6rem;
+  position: absolute;
+  right: 0;
+}
+
+.videoStamp b {
+  font-weight: 900;
+}
+
+.demoBeats {
+  bottom: clamp(8rem, 19vh, 12rem);
+  display: flex;
+  gap: clamp(1rem, 2.5vw, 3rem);
+  left: clamp(1.25rem, 8vw, 9rem);
+  position: absolute;
+}
+
+.demoBeats span {
+  color: var(--fog);
+  font-family: "SFMono-Regular", Consolas, monospace;
+  font-size: clamp(0.52rem, 0.68vw, 0.65rem);
+  white-space: nowrap;
+}
+
+.demoBeats b {
+  color: var(--light-blue);
+  margin-right: 0.35rem;
+}
+
+.demoClose {
+  bottom: clamp(2.7rem, 7vh, 5rem);
+  font-family: Impact, "Arial Narrow", sans-serif;
+  font-size: clamp(2rem, 3.3vw, 3.7rem);
+  left: clamp(1.25rem, 8vw, 9rem);
+  letter-spacing: -0.02em;
+  line-height: 0.9;
+  margin: 0;
+  max-width: 37rem;
+  position: absolute;
+  text-transform: uppercase;
+}
+
+.controls {
+  align-items: center;
+  bottom: 1rem;
+  display: flex;
+  gap: 0.2rem;
+  position: absolute;
+  right: clamp(1.25rem, 3vw, 3.75rem);
+  z-index: 12;
+}
+
+.controls button {
+  align-items: center;
+  background: rgba(255, 255, 255, 0.72);
+  border: 1px solid rgba(36, 50, 66, 0.2);
+  color: var(--paper);
+  cursor: pointer;
+  display: flex;
+  height: 2rem;
+  justify-content: center;
+  width: 2rem;
+}
+
+.controls button:hover:not(:disabled) {
+  background: var(--light-blue);
+  border-color: var(--light-blue);
+  color: var(--navy);
+}
+
+.controls button:disabled {
+  cursor: not-allowed;
+  opacity: 0.28;
+}
+
+.controls span {
+  color: var(--fog);
+  font-family: "SFMono-Regular", Consolas, monospace;
+  font-size: 0.58rem;
+  margin: 0 0.4rem;
+}
+
+.slideNumber {
+  bottom: clamp(1rem, 2.2vw, 2rem);
+  color: rgba(36, 50, 66, 0.7);
+  font-family: "SFMono-Regular", Consolas, monospace;
+  font-size: clamp(0.58rem, 0.72vw, 0.72rem);
+  letter-spacing: 0.12em;
+  line-height: 1;
+  pointer-events: none;
+  position: absolute;
+  right: clamp(1.25rem, 3vw, 3.75rem);
+  z-index: 12;
+}
+
+.blackout {
+  background: #000;
+  inset: 0;
+  position: absolute;
+  z-index: 30;
+}
+
+@media (max-width: 800px) {
+  .deck {
+    min-height: 42rem;
+    overflow-y: auto;
+    position: absolute;
+  }
+
+  .topbar {
+    height: 52px;
+  }
+
+  .deckLabel {
+    display: none;
+  }
+
+  .slide {
+    min-height: 42rem;
+  }
+
+  .issueCard {
+    padding: 0.3rem 0.36rem;
+    width: min(5.4rem, 16vw);
+  }
+
+  .issueCard b {
+    font-size: 0.48rem;
+  }
+
+  .issueCard span {
+    font-size: 0.45rem;
+  }
+
+  .waveHeader {
+    left: 0.65rem;
+  }
+
+  .systemHeading,
+  .demoHeading {
+    top: 5.8rem;
+  }
+
+  .playbookSurface {
+    inset: 3.8rem 0.9rem 3.4rem;
+  }
+
+  .playbookList {
+    padding: 1rem 1.1rem;
+  }
+
+  .playbookList p,
+  .playbookList li > b {
+    font-size: clamp(0.68rem, 2.7vw, 0.9rem);
+  }
+
+  .systemHeading h2,
+  .demoHeading h2 {
+    font-size: clamp(2.85rem, 11vw, 4.5rem);
+  }
+
+  .systemMap {
+    bottom: auto;
+    grid-template-columns: 1fr;
+    left: 1.25rem;
+    right: 1.25rem;
+    top: 22rem;
+  }
+
+  .systemStep {
+    min-height: 8.4rem;
+    padding-top: 2.1rem;
+  }
+
+  .systemStep .mark {
+    display: none;
+  }
+
+  .systemRail {
+    display: none;
+  }
+
+  .systemProof {
+    bottom: 1.8rem;
+    gap: 0.7rem;
+    grid-template-columns: 1fr;
+  }
+
+  .systemProof div {
+    justify-content: flex-start;
+  }
+
+  .systemProof > span {
+    display: none;
+  }
+
+  .videoFrame {
+    left: 1.25rem;
+    right: 1.25rem;
+    top: 23rem;
+    width: auto;
+  }
+
+  .demoBeats {
+    bottom: 8.7rem;
+    flex-wrap: wrap;
+    gap: 0.65rem 1rem;
+  }
+
+  .demoClose {
+    bottom: 1.9rem;
+    font-size: clamp(1.6rem, 7vw, 2.4rem);
+    max-width: calc(100% - 2.5rem);
+  }
+
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .slide,
+  .issueCard,
+  .edges,
+  .waveHeaders,
+  .progress span,
+  .videoFallback,
+  .demoVideo,
+  .presenterNotes {
+    transition-duration: 1ms;
+  }
+
+  .issueCard {
+    animation: none;
+  }
+
+  .playbookSurface,
+  .titleStage .graphSurface,
+  .projectTitleReveal {
+    transition-duration: 1ms;
+  }
+
+}
+
+/* ---- Slide 03 · architecture -------------------------------------------- */
+
+.archHeading {
+  left: clamp(1.25rem, 8vw, 9rem);
+  position: absolute;
+  top: clamp(5rem, 9vh, 7rem);
+}
+
+.archHeading h2 {
+  color: #18212b;
+  font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Helvetica, Arial, sans-serif;
+  font-size: clamp(1.75rem, 2.9vw, 2.85rem);
+  font-weight: 600;
+  letter-spacing: -0.035em;
+  line-height: 1.1;
+  margin: 0.7rem 0 0;
+  white-space: nowrap;
+}
+
+.archHeading > p:not(.kicker) {
+  color: var(--ink);
+  font-size: clamp(0.88rem, 1.15vw, 1.08rem);
+  line-height: 1.5;
+  margin: 0.55rem 0 0;
+  max-width: 34rem;
+}
+
+.archStage {
+  bottom: clamp(4.5rem, 11vh, 8rem);
+  left: clamp(1.25rem, 6vw, 7rem);
+  position: absolute;
+  right: clamp(1.25rem, 6vw, 7rem);
+  top: clamp(8.5rem, 21vh, 12rem);
+}
+
+.archSvg {
+  display: block;
+  height: 100%;
+  width: 100%;
+}
+
+/* ---- nodes ---- */
+.node text {
+  fill: #18212b;
+  font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Helvetica, Arial, sans-serif;
+  font-size: 19px;
+  font-weight: 500;
+  letter-spacing: -0.01em;
+  text-anchor: middle;
+}
+
+.node text.sub {
+  fill: #6b7683;
+  font-family: "SFMono-Regular", Consolas, monospace;
+  font-size: 11px;
+  font-weight: 600;
+  letter-spacing: 0.11em;
+}
+
+.node text.branchTag {
+  fill: #0969da;
+  font-family: "SFMono-Regular", Consolas, monospace;
+  font-size: 13px;
+  font-weight: 700;
+  letter-spacing: 0.1em;
+}
+
+.glyph {
+  fill: none;
+  stroke: #0969da;
+  stroke-linecap: round;
+  stroke-linejoin: round;
+  stroke-width: 2.6;
+}
+
+.glyphKey {
+  stroke: #0969da;
+  stroke-width: 3.2;
+}
+
+.glyphSolid {
+  fill: #18212b;
+}
+
+/* ---- wires ---- */
+.wire {
+  fill: none;
+  stroke: #c3cbd4;
+  stroke-linecap: round;
+  stroke-width: 2;
+}
+
+.head {
+  fill: none;
+  stroke: #9aa4b0;
+  stroke-linecap: round;
+  stroke-linejoin: round;
+  stroke-width: 2.2;
+}
+
+/* the moving data */
+.flow {
+  fill: none;
+  stroke: #0969da;
+  stroke-dasharray: 10 26;
+  stroke-linecap: round;
+  stroke-width: 3;
+  animation: archFlow 1.6s linear infinite;
+}
+
+@keyframes archFlow {
+  to { stroke-dashoffset: -36; }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .flow { animation: none; opacity: 0.45; }
+}
+
+.wireLabel {
+  fill: #6b7683;
+  font-family: "SFMono-Regular", Consolas, monospace;
+  font-size: 11px;
+  font-weight: 600;
+  letter-spacing: 0.11em;
+  text-anchor: middle;
+}
+
+/* ---- Slide: top-down vs bottom-up ---- */
+/* Match the heading treatment of .playbookHeading h1 / .archHeading h2 rather
+   than the deck's older Impact/condensed lockup. */
+.dualHeading {
+  left: clamp(1.25rem, 8vw, 9rem);
+  max-width: none;
+  top: clamp(5rem, 9vh, 7rem);
+}
+
+.dualHeading h2 {
+  color: #18212b;
+  font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Helvetica, Arial, sans-serif;
+  font-size: clamp(1.75rem, 2.9vw, 2.85rem);
+  font-stretch: normal;
+  font-weight: 600;
+  letter-spacing: -0.035em;
+  line-height: 1.1;
+  margin: 0;
+  text-transform: none;
+  white-space: nowrap;
+}
+
+.dualMap {
+  align-items: start;
+  bottom: clamp(3rem, 8vh, 5.5rem);
+  display: grid;
+  gap: clamp(1rem, 2.5vw, 2.5rem);
+  grid-template-columns: 1fr 1fr;
+  left: clamp(1.25rem, 8vw, 9rem);
+  position: absolute;
+  right: clamp(1.25rem, 8vw, 9rem);
+  top: clamp(9.5rem, 22vh, 13rem);
+}
+
+.dualShot {
+  background: #ffffff;
+  border: 1px solid var(--line);
+  display: flex;
+  flex-direction: column;
+  margin: 0;
+  min-height: 0;
+  overflow: hidden;
+}
+
+.dualShot figcaption {
+  align-items: baseline;
+  border-bottom: 1px solid var(--line);
+  display: flex;
+  gap: 0.7rem;
+  padding: 0.65rem 1rem;
+}
+
+.dualShot b {
+  color: var(--light-blue);
+  font-family: "SFMono-Regular", Consolas, monospace;
+  font-size: 0.62rem;
+  letter-spacing: 0.12em;
+}
+
+/* Both shots share one ratio so the two panels end at the same baseline; the
+   panels then size to their content instead of stretching to the slide floor. */
+.dualShot img {
+  aspect-ratio: 1202 / 1104;
+  background: #fafbfc;
+  display: block;
+  flex: none;
+  height: auto;
+  object-fit: contain;
+  object-position: top center;
+  width: 100%;
+}
