@@ -86,6 +86,11 @@ function Preview({ index, introStage = 0 }: { index: number; introStage?: number
           <Logo />
           <span>Lattice</span>
         </div>
+        <div className={styles.previewProjectFooter}>
+          Alba · Albert · Jonathan · Nicolas · Tong
+          <br />
+          Microsoft Summer Mini-Hackathon 2026
+        </div>
       </div>
     );
   }

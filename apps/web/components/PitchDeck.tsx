@@ -250,6 +250,10 @@ export function PitchDeck() {
               <Logo className={styles.projectLogo} />
               <h1>Lattice</h1>
             </div>
+            <footer className={styles.projectFooter}>
+              <span>Alba · Albert · Jonathan · Nicolas · Tong</span>
+              <span>Microsoft Summer Mini-Hackathon 2026</span>
+            </footer>
           </div>
         </div>
       </section>
