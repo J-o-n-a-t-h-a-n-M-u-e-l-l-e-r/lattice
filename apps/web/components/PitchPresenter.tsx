@@ -5,7 +5,7 @@ import styles from './PitchPresenter.module.css';
 
 type DeckState = {
   slide: number;
-  revealed: boolean;
+  introStage: number;
   blackout: boolean;
 };
 
@@ -13,6 +13,10 @@ const slides = [
   {
     title: 'The hidden graph',
     note: 'Ask which work can safely start right now. Let the floating issues establish the problem, then reveal the schedule.',
+    titleStage: {
+      title: 'Microsoft 365 Collaboration Rollout',
+      note: 'Let the settled graph resolve into the project title, then advance to the shared schedule.',
+    },
   },
   {
     title: 'One pass. A shared schedule.',
@@ -45,11 +49,13 @@ function IssueOpenedIcon() {
   );
 }
 
-function Preview({ index, revealed = false }: { index: number; revealed?: boolean }) {
+function Preview({ index, introStage = 0 }: { index: number; introStage?: number }) {
   if (index === 0) {
+    const organized = introStage > 0;
+    const titleStage = introStage === 2;
     return (
-      <div className={`${styles.previewSlide} ${styles.previewIntro}`}>
-        <div className={`${styles.previewIssues} ${revealed ? styles.previewRevealed : ''}`}>
+      <div className={`${styles.previewSlide} ${styles.previewIntro} ${titleStage ? styles.previewTitleStage : ''}`}>
+        <div className={`${styles.previewIssues} ${organized ? styles.previewOrganized : ''}`}>
           <svg viewBox="0 0 100 100" preserveAspectRatio="none" aria-hidden="true">
             <defs>
               <marker id="preview-graph-arrow" markerWidth="3" markerHeight="3" refX="2.4" refY="1.5" orient="auto">
@@ -75,6 +81,7 @@ function Preview({ index, revealed = false }: { index: number; revealed?: boolea
             </span>
           ))}
         </div>
+        <div className={styles.previewProjectTitle}>Microsoft 365<br />Collaboration Rollout</div>
       </div>
     );
   }
@@ -108,7 +115,7 @@ function formatElapsed(value: number) {
 }
 
 export function PitchPresenter() {
-  const [deck, setDeck] = useState<DeckState>({ slide: 0, revealed: false, blackout: false });
+  const [deck, setDeck] = useState<DeckState>({ slide: 0, introStage: 0, blackout: false });
   const [connected, setConnected] = useState(false);
   const [running, setRunning] = useState(false);
   const [elapsed, setElapsed] = useState(0);
@@ -123,7 +130,11 @@ export function PitchPresenter() {
     channel.current = broadcast;
     broadcast.onmessage = ({ data }) => {
       if (!data || data.source !== 'lattice-pitch-deck' || data.type !== 'state') return;
-      setDeck({ slide: data.slide, revealed: data.revealed, blackout: data.blackout });
+      setDeck({
+        slide: data.slide,
+        introStage: Math.max(0, Math.min(2, Number(data.introStage) || 0)),
+        blackout: data.blackout,
+      });
       setConnected(true);
     };
     broadcast.postMessage({ source: 'lattice-pitch-presenter', type: 'request-state' });
@@ -136,10 +147,18 @@ export function PitchPresenter() {
     };
   }, []);
 
+  const currentSlide = slides[deck.slide];
+  const introSlide = slides[0]!;
+  const introTitleStage = introSlide.titleStage!;
+  const inTitleStage = deck.slide === 0 && deck.introStage === 2;
+  const currentTitle = inTitleStage ? introTitleStage.title : currentSlide.title;
+  const currentNote = inTitleStage ? introTitleStage.note : currentSlide.note;
+
   useEffect(() => {
-    const saved = window.localStorage.getItem(`lattice-pitch-note-${deck.slide}`);
-    setNotes(saved ?? slides[deck.slide].note);
-  }, [deck.slide]);
+    const noteKey = inTitleStage ? `${deck.slide}-title` : String(deck.slide);
+    const saved = window.localStorage.getItem(`lattice-pitch-note-${noteKey}`);
+    setNotes(saved ?? currentNote);
+  }, [currentNote, deck.slide, inTitleStage]);
 
   useEffect(() => {
     if (!running) return;
@@ -152,7 +171,7 @@ export function PitchPresenter() {
       source: 'lattice-pitch-presenter',
       type: 'go-to',
       slide,
-      revealed: false,
+      introStage: 0,
     });
   };
 
@@ -181,7 +200,8 @@ export function PitchPresenter() {
 
   const saveNotes = (value: string) => {
     setNotes(value);
-    window.localStorage.setItem(`lattice-pitch-note-${deck.slide}`, value);
+    const noteKey = inTitleStage ? `${deck.slide}-title` : String(deck.slide);
+    window.localStorage.setItem(`lattice-pitch-note-${noteKey}`, value);
   };
 
   useEffect(() => {
@@ -230,8 +250,8 @@ export function PitchPresenter() {
 
       <section className={styles.workspace}>
         <article className={`${styles.panel} ${styles.currentPanel}`}>
-          <header><span>Current slide</span><b>{slides[deck.slide].title}</b></header>
-          <div className={styles.previewWrap}><Preview index={deck.slide} revealed={deck.revealed} /></div>
+          <header><span>Current slide</span><b>{currentTitle}</b></header>
+          <div className={styles.previewWrap}><Preview index={deck.slide} introStage={deck.introStage} /></div>
           <div className={styles.progress}><span style={{ width: `${((deck.slide + 1) / slides.length) * 100}%` }} /></div>
         </article>
 

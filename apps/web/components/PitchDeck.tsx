@@ -75,25 +75,27 @@ function IssueOpenedIcon() {
 
 export function PitchDeck() {
   const [slide, setSlide] = useState(0);
-  const [revealed, setRevealed] = useState(false);
+  const [introStage, setIntroStage] = useState(0);
   const [videoReady, setVideoReady] = useState(false);
   const [videoMissing, setVideoMissing] = useState(false);
   const [blackout, setBlackout] = useState(false);
   const presenterChannel = useRef<BroadcastChannel | null>(null);
-  const deckState = useRef({ slide, revealed, blackout });
-  deckState.current = { slide, revealed, blackout };
+  const deckState = useRef({ slide, introStage, blackout });
+  deckState.current = { slide, introStage, blackout };
+  const graphOrganized = introStage > 0;
+  const titleStage = introStage === 2;
 
   const next = () => {
-    if (slide === 0 && !revealed) {
-      setRevealed(true);
+    if (slide === 0 && introStage < 2) {
+      setIntroStage((stage) => stage + 1);
       return;
     }
     setSlide((current) => Math.min(current + 1, 2));
   };
 
   const previous = () => {
-    if (slide === 0 && revealed) {
-      setRevealed(false);
+    if (slide === 0 && introStage > 0) {
+      setIntroStage((stage) => stage - 1);
       return;
     }
     setSlide((current) => Math.max(current - 1, 0));
@@ -121,7 +123,7 @@ export function PitchDeck() {
       if (data.type === 'go-to') {
         const destination = Math.max(0, Math.min(2, Number(data.slide)));
         setSlide(destination);
-        setRevealed(destination === 0 ? Boolean(data.revealed) : false);
+        setIntroStage(destination === 0 ? Math.max(0, Math.min(2, Number(data.introStage) || 0)) : 0);
       }
       if (data.type === 'blackout') setBlackout(Boolean(data.enabled));
     };
@@ -137,10 +139,10 @@ export function PitchDeck() {
       source: 'lattice-pitch-deck',
       type: 'state',
       slide,
-      revealed,
+      introStage,
       blackout,
     });
-  }, [slide, revealed, blackout]);
+  }, [slide, introStage, blackout]);
 
   useEffect(() => {
     const onKeyDown = (event: KeyboardEvent) => {
@@ -174,68 +176,77 @@ export function PitchDeck() {
 
     window.addEventListener('keydown', onKeyDown);
     return () => window.removeEventListener('keydown', onKeyDown);
-  }, [slide, revealed]);
+  }, [slide, introStage]);
 
   return (
     <main className={styles.deck} aria-label="Lattice pitch deck">
       <section className={`${styles.slide} ${slide === 0 ? styles.active : ''}`} aria-hidden={slide !== 0}>
         <div
-          className={`${styles.issueField} ${revealed ? styles.revealed : ''}`}
+          className={`${styles.issueField} ${graphOrganized ? styles.organized : ''} ${titleStage ? styles.titleStage : ''}`}
           role="group"
-          aria-label={revealed ? 'GitHub issues arranged into work waves' : 'GitHub issues awaiting a work schedule'}
+          aria-label={titleStage
+            ? 'Microsoft 365 Collaboration Rollout'
+            : graphOrganized
+              ? 'GitHub issues arranged into work waves'
+              : 'GitHub issues awaiting a work schedule'}
         >
-          <svg className={styles.edges} viewBox="0 0 100 100" preserveAspectRatio="none">
-            <defs>
-              <marker id="graph-arrow" markerWidth="3" markerHeight="3" refX="2.4" refY="1.5" orient="auto">
-                <path d="M0 0 3 1.5 0 3Z" />
-              </marker>
-            </defs>
+          <div className={styles.graphSurface} aria-hidden={titleStage}>
+            <svg className={styles.edges} viewBox="0 0 100 100" preserveAspectRatio="none">
+              <defs>
+                <marker id="graph-arrow" markerWidth="3" markerHeight="3" refX="2.4" refY="1.5" orient="auto">
+                  <path d="M0 0 3 1.5 0 3Z" />
+                </marker>
+              </defs>
               <path d="M23 18 C23 25 20 27 20 31 M23 18 C27 25 35 27 35 31 M42 18 C42 25 50 27 50 31 M61 18 C60 25 50 27 50 31 M61 18 C64 25 67 27 67 31 M81 18 C80 25 67 27 67 31 M81 18 C84 25 84 27 84 31" />
               <path d="M20 36 C20 43 25 45 25 49 M35 36 C36 43 45 45 45 49 M50 36 C50 43 45 45 45 49 M50 36 C54 43 65 45 65 49 M67 36 C67 43 65 45 65 49 M67 36 C72 43 83 45 83 49 M84 36 C84 43 83 45 83 49" />
               <path d="M25 54 C26 61 45 63 45 67 M45 54 C45 61 45 63 45 67 M65 54 C65 61 65 63 65 67 M83 54 C80 61 65 63 65 67 M65 54 C72 61 83 63 83 67" />
               <path d="M45 72 C46 79 55 80 55 84 M65 72 C64 79 55 80 55 84 M83 72 C75 79 55 80 55 84" />
-          </svg>
-          <div className={styles.waveHeaders}>
-            {waves.map((wave) => (
-              <div
-                className={styles.waveHeader}
-                key={wave.index}
-                style={{ '--wave-y': `${wave.y}%` } as CSSProperties}
-              >
-                <b>{wave.label}</b>
-                <span>{wave.detail}</span>
-              </div>
-            ))}
+            </svg>
+            <div className={styles.waveHeaders}>
+              {waves.map((wave) => (
+                <div
+                  className={styles.waveHeader}
+                  key={wave.index}
+                  style={{ '--wave-y': `${wave.y}%` } as CSSProperties}
+                >
+                  <b>{wave.label}</b>
+                  <span>{wave.detail}</span>
+                </div>
+              ))}
+            </div>
+            {issues.map((issue) => {
+              const cardStyle = {
+                '--chaos-x': `${issue.chaos[0]}%`,
+                '--chaos-y': `${issue.chaos[1]}%`,
+                '--graph-x': `${issue.graph[0]}%`,
+                '--graph-y': `${issue.graph[1]}%`,
+                '--drift-x': `${issue.drift[0]}px`,
+                '--drift-y': `${issue.drift[1]}px`,
+                '--arc-x': `${issue.arc[0]}px`,
+                '--arc-y': `${issue.arc[1]}px`,
+                '--float-duration': issue.duration,
+                '--float-phase': issue.phase,
+                '--tilt': `${issue.tilt}deg`,
+              } as CSSProperties;
+              return (
+                <article
+                  className={styles.issueCard}
+                  style={cardStyle}
+                  key={issue.number}
+                  aria-label={`GitHub issue #${issue.number}: ${issue.title}`}
+                >
+                  <span className={styles.issueMeta}>
+                    <IssueOpenedIcon />
+                    <span>#{String(issue.number).padStart(2, '0')}</span>
+                  </span>
+                  <b>{issue.title}</b>
+                </article>
+              );
+            })}
           </div>
-          {issues.map((issue) => {
-            const cardStyle = {
-              '--chaos-x': `${issue.chaos[0]}%`,
-              '--chaos-y': `${issue.chaos[1]}%`,
-              '--graph-x': `${issue.graph[0]}%`,
-              '--graph-y': `${issue.graph[1]}%`,
-              '--drift-x': `${issue.drift[0]}px`,
-              '--drift-y': `${issue.drift[1]}px`,
-              '--arc-x': `${issue.arc[0]}px`,
-              '--arc-y': `${issue.arc[1]}px`,
-              '--float-duration': issue.duration,
-              '--float-phase': issue.phase,
-              '--tilt': `${issue.tilt}deg`,
-            } as CSSProperties;
-            return (
-              <article
-                className={styles.issueCard}
-                style={cardStyle}
-                key={issue.number}
-                aria-label={`GitHub issue #${issue.number}: ${issue.title}`}
-              >
-                <span className={styles.issueMeta}>
-                  <IssueOpenedIcon />
-                  <span>#{String(issue.number).padStart(2, '0')}</span>
-                </span>
-                <b>{issue.title}</b>
-              </article>
-            );
-          })}
+          <div className={styles.projectTitleReveal} aria-hidden={!titleStage}>
+            <h1>Microsoft 365<br />Collaboration Rollout</h1>
+          </div>
         </div>
       </section>
 
@@ -343,6 +354,9 @@ export function PitchDeck() {
         </p>
       </section>
 
+      <output className={styles.slideNumber} aria-label={`Slide ${slide + 1}`}>
+        {String(slide + 1).padStart(2, '0')}
+      </output>
       {blackout && <div className={styles.blackout} aria-label="Audience screen blacked out" />}
     </main>
   );

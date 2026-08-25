@@ -122,6 +122,16 @@
   --graph-border: #2a3140;
   --graph-edge: #687184;
   --graph-muted: #8b93a7;
+  height: 100%;
+  inset: 0;
+  overflow: hidden;
+  position: absolute;
+  transform: scale(1);
+  transition: filter 650ms cubic-bezier(.16, 1, .3, 1), transform 650ms cubic-bezier(.16, 1, .3, 1);
+  width: 100%;
+}
+
+.graphSurface {
   background:
     radial-gradient(ellipse at 57% 42%, rgba(64, 72, 88, 0.07), transparent 45%),
     var(--graph-surface);
@@ -132,7 +142,7 @@
   width: 100%;
 }
 
-.issueField::after {
+.graphSurface::after {
   background: radial-gradient(ellipse at center, transparent 30%, rgba(8, 9, 12, 0.48) 88%);
   content: "";
   inset: 0;
@@ -216,7 +226,7 @@
   overflow-wrap: break-word;
 }
 
-.revealed .issueCard {
+.organized .issueCard {
   background: var(--graph-card);
   border-color: var(--graph-border);
   box-shadow: 0 10px 20px rgba(0, 0, 0, 0.3);
@@ -250,7 +260,7 @@
   fill: var(--graph-edge);
 }
 
-.revealed .edges {
+.organized .edges {
   opacity: 0.78;
 }
 
@@ -300,8 +310,49 @@
   text-transform: none;
 }
 
-.revealed .waveHeaders {
+.organized .waveHeaders {
   opacity: 1;
+}
+
+.titleStage .graphSurface {
+  filter: blur(10px);
+  transform: scale(1.025);
+}
+
+.projectTitleReveal {
+  align-items: center;
+  background: rgba(13, 15, 19, 0.18);
+  display: flex;
+  inset: 0;
+  justify-content: center;
+  opacity: 0;
+  padding: 1.5rem;
+  pointer-events: none;
+  position: absolute;
+  text-align: center;
+  transform: scale(0.98);
+  transition: opacity 400ms ease 150ms, transform 650ms cubic-bezier(.16, 1, .3, 1) 150ms;
+  z-index: 3;
+}
+
+.projectTitleReveal h1 {
+  color: #f1f3f2;
+  font-family: Impact, "Arial Narrow", "Aptos Display", sans-serif;
+  font-size: clamp(3.25rem, 8.5vw, 9rem);
+  font-stretch: condensed;
+  font-weight: 900;
+  letter-spacing: -0.045em;
+  line-height: 0.84;
+  margin: 0;
+  max-width: 12ch;
+  text-transform: uppercase;
+  text-wrap: balance;
+  text-shadow: 0 0.35rem 1.5rem rgba(0, 0, 0, 0.64);
+}
+
+.titleStage .projectTitleReveal {
+  opacity: 1;
+  transform: scale(1);
 }
 
 .primaryAction svg,
@@ -679,6 +730,19 @@
   margin: 0 0.4rem;
 }
 
+.slideNumber {
+  bottom: clamp(1rem, 2.2vw, 2rem);
+  color: rgba(233, 247, 255, 0.58);
+  font-family: "SFMono-Regular", Consolas, monospace;
+  font-size: clamp(0.58rem, 0.72vw, 0.72rem);
+  letter-spacing: 0.12em;
+  line-height: 1;
+  pointer-events: none;
+  position: absolute;
+  right: clamp(1.25rem, 3vw, 3.75rem);
+  z-index: 12;
+}
+
 .blackout {
   background: #000;
   inset: 0;
@@ -802,5 +866,10 @@
 
   .issueCard {
     animation: none;
+  }
+
+  .titleStage .graphSurface,
+  .projectTitleReveal {
+    transition-duration: 1ms;
   }
 }
