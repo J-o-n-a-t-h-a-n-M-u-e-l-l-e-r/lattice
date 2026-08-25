@@ -49,3 +49,22 @@ export function IssueNode({ data }: NodeProps) {
     </div>
   );
 }
+
+/** Row label for a wave. A node so that it pans and zooms with the graph. */
+export function WaveLabel({ data }: NodeProps) {
+  const { wave, count } = data as { wave: number; count: number };
+  return (
+    <div className="select-none pointer-events-none text-right" style={{ width: 170 }}>
+      <div className="text-[13px] font-medium tracking-tight"
+           style={{ color: wave === 0 ? '#3fb950' : '#8b93a7' }}>
+        Wave {wave}
+      </div>
+      <div className="text-[11px] mt-0.5" style={{ color: '#5a6274' }}>
+        {wave === 0 ? 'start now' : `needs wave ${wave - 1}`}
+      </div>
+      <div className="text-[11px] font-mono" style={{ color: '#4a5261' }}>
+        {count} {count === 1 ? 'issue' : 'issues'}
+      </div>
+    </div>
+  );
+}

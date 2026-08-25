@@ -130,6 +130,14 @@ hash, which is also what protects the 50-request/day free-tier quota.
 
 Set `DATABASE_URL` to use hosted Postgres (Neon) instead of the embedded one.
 
+### Stop the backend with Ctrl-C, not `kill -9`
+
+PGlite writes to a real Postgres data directory. A hard kill mid-write corrupts
+it and the store is gone. The server closes the database on SIGINT/SIGTERM, so
+Ctrl-C is safe. If it does get corrupted, `npm run import -w @lattice/backend`
+restores the last graph from `artifacts/graph.json` — no model request, no
+GitHub token.
+
 ### Check it without a browser
 
 ```bash

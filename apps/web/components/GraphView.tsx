@@ -7,10 +7,10 @@ import '@xyflow/react/dist/style.css';
 import type { GraphPayload } from '@lattice/types';
 import { api } from '../lib/api';
 import { connectedSet, layout, partition, reduce } from './graph-layout';
-import { IssueNode } from './IssueNode';
+import { IssueNode, WaveLabel } from './IssueNode';
 import { NodePanel } from './NodePanel';
 
-const nodeTypes = { issue: IssueNode };
+const nodeTypes = { issue: IssueNode, waveLabel: WaveLabel };
 
 export function GraphView({ initial, initialError, repo }: {
   initial: GraphPayload | null;
@@ -98,21 +98,6 @@ export function GraphView({ initial, initialError, repo }: {
             <Controls showInteractive={false} position="bottom-right"
                       style={{ background: '#141821', border: '1px solid #2a3140' }} />
 
-            {/* Wave bands, drawn behind the nodes so a row reads as a stage. */}
-            {laid.rows.map((r) => (
-              <div key={r.wave}
-                   className="absolute pointer-events-none text-[11px] uppercase tracking-[0.14em]"
-                   style={{
-                     transform: `translate(${-laid.width / 2 - 150}px, ${r.y + 4}px)`,
-                     color: r.wave === 0 ? '#3fb950' : '#5a6274',
-                   }}>
-                Wave {r.wave}
-                <div className="text-[10px] tracking-normal normal-case mt-0.5"
-                     style={{ color: '#4a5261' }}>
-                  {r.wave === 0 ? 'start now' : `after wave ${r.wave - 1}`} · {r.count}
-                </div>
-              </div>
-            ))}
           </ReactFlow>
         </ReactFlowProvider>
 
@@ -133,7 +118,7 @@ export function GraphView({ initial, initialError, repo }: {
         </div>
 
         {/* Stats */}
-        <div className="absolute bottom-3 left-3 z-10 flex gap-4 rounded-lg border px-3 py-2 text-[11px]"
+        <div className="absolute bottom-3 left-1/2 -translate-x-1/2 z-10 flex gap-4 rounded-lg border px-3.5 py-2 text-[11px]"
              style={{ borderColor: '#2a3140', background: 'rgba(20,24,33,.94)', backdropFilter: 'blur(8px)' }}>
           {[
             ['issues', stats.issues],
@@ -153,7 +138,7 @@ export function GraphView({ initial, initialError, repo }: {
             depend on nothing. Keeping them out of the DAG is what makes the
             dependency structure legible. */}
         {showIsolated && isolated.length > 0 && (
-          <div className="absolute bottom-14 left-3 right-3 z-10 max-h-[30vh] overflow-y-auto rounded-lg border p-3"
+          <div className="absolute bottom-16 left-3 right-3 z-10 max-h-[30vh] overflow-y-auto rounded-lg border p-3"
                style={{ borderColor: '#2a3140', background: 'rgba(20,24,33,.97)', backdropFilter: 'blur(8px)' }}>
             <div className="text-[11px] mb-2" style={{ color: '#8b93a7' }}>
               {isolated.length} issues with no dependencies — startable in any order

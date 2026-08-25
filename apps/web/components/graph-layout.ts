@@ -4,7 +4,7 @@ import type { Edge, Node } from '@xyflow/react';
 export const NODE_W = 230;
 export const NODE_H = 76;
 const GAP_X = 26;
-const GAP_Y = 104;
+const GAP_Y = 150;   // room for the wave divider between rows
 const MAX_COLS = 7;
 
 /**
@@ -83,31 +83,54 @@ export function layout(
     blockers.get(e.blocked)!.push(e.blockedBy);
   }
 
-  const order = new Map<number, number>();   // issue -> slot within its row
+  const dependents = new Map<number, number[]>();
+  for (const e of edges) {
+    if (!dependents.has(e.blockedBy)) dependents.set(e.blockedBy, []);
+    dependents.get(e.blockedBy)!.push(e.blocked);
+  }
+
+  // Sugiyama ordering: alternate downward and upward barycentre sweeps.
+  //
+  // A single downward pass only orders each row against the one above it, so
+  // the top row never moves and the crossings it causes are permanent. Sweeping
+  // both ways lets every row settle against both neighbours.
+  const rowsOf = waves.map((w) => byWave.get(w)!);
+  rowsOf[0]!.sort((a, b) => b.blastRadius - a.blastRadius || a.number - b.number);
+
+  const slot = new Map<number, number>();
+  const reindex = () => {
+    for (const row of rowsOf) row.forEach((n, i) => slot.set(n.number, i));
+  };
+  reindex();
+
+  const meanOf = (ids: number[] | undefined) => {
+    const xs = (ids ?? []).map((v) => slot.get(v)).filter((v): v is number => v !== undefined);
+    return xs.length ? xs.reduce((a, b) => a + b, 0) / xs.length : null;
+  };
+
+  for (let pass = 0; pass < 4; pass++) {
+    const downward = pass % 2 === 0;
+    const seq = downward ? rowsOf.slice(1) : rowsOf.slice(0, -1).reverse();
+    for (const row of seq) {
+      const key = new Map<number, number>();
+      row.forEach((n, i) => {
+        const m = meanOf(downward ? blockers.get(n.number) : dependents.get(n.number));
+        key.set(n.number, m ?? i);          // no neighbours: hold position
+      });
+      row.sort((a, b) =>
+        key.get(a.number)! - key.get(b.number)! ||
+        b.blastRadius - a.blastRadius || a.number - b.number);
+      reindex();
+    }
+  }
+
+  const order = slot;
   const pos = new Map<number, { x: number; y: number }>();
   const rows: Laid['rows'] = [];
 
   let y = 0;
   for (const wave of waves) {
     const row = byWave.get(wave)!;
-
-    if (wave === waves[0]) {
-      // Seed the first row by impact, so the issues that unblock the most sit
-      // together at the left where the eye starts.
-      row.sort((a, b) => b.blastRadius - a.blastRadius || a.number - b.number);
-    } else {
-      const bary = (n: GraphNode) => {
-        const parents = (blockers.get(n.number) ?? [])
-          .map((p) => order.get(p))
-          .filter((v): v is number => v !== undefined);
-        return parents.length ? parents.reduce((a, b) => a + b, 0) / parents.length : Infinity;
-      };
-      row.sort((a, b) => bary(a) - bary(b) || b.blastRadius - a.blastRadius || a.number - b.number);
-    }
-
-    row.forEach((n, i) => order.set(n.number, i));
-
-    // Wide rows wrap into a grid rather than becoming a 7000px line.
     const cols = Math.min(MAX_COLS, row.length);
     const subRows = Math.ceil(row.length / cols);
     row.forEach((n, i) => {
@@ -116,11 +139,10 @@ export function layout(
       const rowWidth = Math.min(cols, row.length - r * cols) * (NODE_W + GAP_X) - GAP_X;
       pos.set(n.number, {
         x: -rowWidth / 2 + c * (NODE_W + GAP_X),
-        y: y + r * (NODE_H + 20),
+        y: y + r * (NODE_H + 24),
       });
     });
-
-    const height = subRows * (NODE_H + 20) - 20;
+    const height = subRows * (NODE_H + 24) - 24;
     rows.push({ wave, y, count: row.length, height });
     y += height + GAP_Y;
   }
@@ -128,7 +150,23 @@ export function layout(
   const criticalSet = new Set(opts.criticalPath);
   const width = MAX_COLS * (NODE_W + GAP_X);
 
-  const flowNodes: Node[] = nodes.map((n) => ({
+  const flowNodes: Node[] = [];
+
+  // Row labels are NODES, not overlays. Absolutely-positioned overlays live in
+  // viewport space, so they detach from the graph the moment you pan - which is
+  // why they were invisible.
+  for (const r of rows) {
+    flowNodes.push({
+      id: `wave-${r.wave}`,
+      type: 'waveLabel',
+      position: { x: -width / 2 - 190, y: r.y + r.height / 2 - 24 },
+      data: { wave: r.wave, count: r.count },
+      draggable: false, selectable: false, focusable: false,
+      zIndex: 0,
+    });
+  }
+
+  flowNodes.push(...nodes.map((n) => ({
     id: String(n.number),
     type: 'issue',
     position: pos.get(n.number) ?? { x: 0, y: 0 },
@@ -139,7 +177,7 @@ export function layout(
       selected: opts.selected === n.number,
     },
     draggable: true,
-  }));
+  })));
 
   // One edge style. Dependency direction is the only thing the picture needs to
   // say; type, confidence and provenance live in the detail panel where there
@@ -152,14 +190,18 @@ export function layout(
       id: `${e.blockedBy}->${e.blocked}`,
       source: String(e.blockedBy),
       target: String(e.blocked),
-      type: 'smoothstep',
-      markerEnd: { type: 'arrowclosed' as const, width: 14, height: 14,
-                   color: lit ? '#58a6ff' : '#4a5468' },
+      // Bezier, not smoothstep: orthogonal routing made every edge share the
+      // same horizontal run between rows, which read as one bus bar rather
+      // than as N separate dependencies.
+      type: 'default',
+      markerEnd: { type: 'arrowclosed' as const, width: 16, height: 16,
+                   color: lit ? '#79c0ff' : '#6e7b91' },
       style: {
-        stroke: lit ? '#58a6ff' : '#3d4759',
-        strokeWidth: lit ? 2 : 1.4,
-        opacity: dim ? 0.08 : 1,
+        stroke: lit ? '#79c0ff' : '#5a6478',
+        strokeWidth: lit ? 2.4 : 1.6,
+        opacity: dim ? 0.07 : 0.9,
       },
+      zIndex: lit ? 10 : 1,
       data: { edge: e },
     };
   });
