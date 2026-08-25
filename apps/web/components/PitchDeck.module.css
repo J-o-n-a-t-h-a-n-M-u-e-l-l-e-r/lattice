@@ -98,19 +98,6 @@
   margin: 0;
 }
 
-.introCopy {
-  left: clamp(1.25rem, 8vw, 9rem);
-  max-width: min(44rem, 55vw);
-  position: absolute;
-  top: clamp(7.4rem, 17vh, 13rem);
-  transition: opacity 450ms ease, transform 500ms ease;
-  z-index: 3;
-}
-
-.revealed + .latticeLockup {
-  opacity: 1;
-}
-
 .introCopy h1,
 .systemHeading h2,
 .demoHeading h2 {
@@ -123,22 +110,9 @@
   text-transform: uppercase;
 }
 
-.introCopy h1 {
-  font-size: clamp(3.5rem, 7vw, 8.2rem);
-}
-
-.introCopy h1 em,
 .systemHeading h2 em {
   color: var(--light-blue);
   font-style: normal;
-}
-
-.introBody {
-  color: var(--fog);
-  font-size: clamp(0.83rem, 1.2vw, 1.1rem);
-  line-height: 1.55;
-  margin: 1.5rem 0 0;
-  max-width: 29rem;
 }
 
 .issueField {
@@ -161,29 +135,40 @@
   align-items: baseline;
   background: rgba(12, 40, 57, 0.78);
   border: 1px solid rgba(125, 234, 255, 0.3);
+  box-sizing: border-box;
   box-shadow: 0 12px 28px rgba(0, 0, 0, 0.26);
   display: flex;
   gap: 0.35rem;
   left: var(--chaos-x);
-  max-width: 9.8rem;
+  overflow: hidden;
   padding: 0.48rem 0.58rem;
   position: absolute;
   top: var(--chaos-y);
-  transform: translate(-50%, -50%) rotate(-3deg);
+  transform: translate(-50%, -50%) rotate(-2deg);
   transition:
-    left 900ms cubic-bezier(.22, .8, .2, 1),
-    top 900ms cubic-bezier(.22, .8, .2, 1),
-    background 550ms ease,
-    border-color 550ms ease,
-    box-shadow 550ms ease,
-    transform 900ms cubic-bezier(.22, .8, .2, 1);
+  left 900ms cubic-bezier(.16, 1, .3, 1),
+  top 900ms cubic-bezier(.16, 1, .3, 1),
+  background 550ms ease,
+  border-color 550ms ease,
+  box-shadow 550ms ease,
+  transform 900ms cubic-bezier(.16, 1, .3, 1);
   white-space: nowrap;
+  width: min(9.8rem, 16vw);
   z-index: 1;
+  animation: issue-drift 6s ease-in-out infinite alternate;
 }
 
 .issueCard:nth-of-type(3n) { transform: translate(-50%, -50%) rotate(4deg); }
 .issueCard:nth-of-type(5n) { transform: translate(-50%, -50%) rotate(7deg); }
 .issueCard:nth-of-type(7n) { transform: translate(-50%, -50%) rotate(-8deg); }
+.issueCard:nth-of-type(2n) { animation-delay: -2.1s; }
+.issueCard:nth-of-type(3n) { animation-delay: -4.2s; }
+.issueCard:nth-of-type(5n) { animation-duration: 7.5s; }
+
+@keyframes issue-drift {
+  from { transform: translate(-50%, -50%) rotate(-2deg); }
+  to { transform: translate(calc(-50% + var(--drift-x)), calc(-50% + var(--drift-y))) rotate(1deg); }
+}
 
 .issueCard span {
   color: var(--light-blue);
@@ -193,6 +178,7 @@
 
 .issueCard b {
   color: var(--ink);
+  min-width: 0;
   font-size: 0.66rem;
   font-weight: 650;
   letter-spacing: 0.01em;
@@ -215,6 +201,7 @@
   left: var(--graph-x);
   top: var(--graph-y);
   transform: translate(-50%, -50%) rotate(0);
+  animation: none;
 }
 
 .edges {
@@ -225,7 +212,7 @@
   position: absolute;
   stroke: var(--light-blue);
   stroke-linecap: round;
-  stroke-width: 0.22;
+  stroke-width: 0.18;
   top: 0;
   transition: opacity 700ms ease 450ms;
   width: 100%;
@@ -233,71 +220,65 @@
 }
 
 .edges path {
-  stroke-dasharray: 1 1;
+  marker-end: url(#graph-arrow);
 }
 
 .edges .criticalEdge {
   stroke: var(--coral);
-  stroke-width: 0.32;
+  stroke-width: 0.26;
 }
 
 .revealed .edges {
   opacity: 0.78;
 }
 
-.latticeLockup {
-  align-items: center;
-  display: flex;
-  flex-direction: column;
-  left: 51.5%;
+.waveHeaders {
+  inset: 0;
   opacity: 0;
+  pointer-events: none;
   position: absolute;
-  text-align: center;
-  top: 48.5%;
-  transform: translate(-50%, -50%);
-  transition: opacity 500ms ease 600ms;
-  z-index: 2;
+  transition: opacity 350ms ease 500ms;
+  z-index: 0;
 }
 
-.latticeLockup span,
-.latticeLockup small {
-  color: var(--light-blue);
-  font-family: "SFMono-Regular", Consolas, monospace;
-  font-size: clamp(0.48rem, 0.68vw, 0.68rem);
-  letter-spacing: 0.15em;
-}
-
-.latticeLockup strong {
-  color: var(--paper);
-  font-family: Impact, "Arial Narrow", sans-serif;
-  font-size: clamp(4.5rem, 12.5vw, 13.5rem);
-  letter-spacing: -0.065em;
-  line-height: 0.76;
-  text-shadow: 0 0 40px rgba(7, 156, 240, 0.24);
-}
-
-.latticeLockup small {
+.waveHeader {
+  align-items: baseline;
   color: var(--fog);
-  letter-spacing: 0.04em;
-  margin-top: 1rem;
-}
-
-.introFooter {
-  align-items: center;
-  bottom: clamp(1.6rem, 5vh, 4rem);
   display: flex;
-  left: clamp(1.25rem, 8vw, 9rem);
+  font-family: "SFMono-Regular", Consolas, monospace;
+  font-size: clamp(0.44rem, 0.58vw, 0.58rem);
+  gap: 0.4rem;
+  left: clamp(0.75rem, 2vw, 2rem);
+  letter-spacing: 0.08em;
   position: absolute;
-  right: clamp(1.25rem, 8vw, 9rem);
-  z-index: 4;
+  top: var(--wave-y);
+  text-transform: uppercase;
 }
 
-.introFooter p {
+.waveHeader::after {
+  background: rgba(125, 234, 255, 0.11);
+  content: "";
+  height: 1px;
+  left: 0;
+  position: absolute;
+  top: calc(100% + 0.4rem);
+  width: clamp(4.5rem, 9vw, 8rem);
+}
+
+.waveHeader b {
+  color: var(--light-blue);
+  font-weight: 700;
+}
+
+.waveHeader span {
   color: var(--fog);
-  font-family: "SFMono-Regular", Consolas, monospace;
-  font-size: 0.66rem;
-  letter-spacing: 0.06em;
-  margin: 0;
+  font-size: 0.9em;
+  letter-spacing: 0.02em;
+  text-transform: none;
+}
+
+.revealed .waveHeaders {
+  opacity: 1;
 }
 
 .primaryAction svg,
@@ -701,22 +682,9 @@
     min-height: 42rem;
   }
 
-  .introCopy {
-    max-width: calc(100% - 2.5rem);
-    top: 5.5rem;
-  }
-
-  .introCopy h1 {
-    font-size: clamp(3rem, 13vw, 5.4rem);
-  }
-
-  .introBody {
-    max-width: 22rem;
-  }
-
   .issueCard {
-    max-width: 5.4rem;
     padding: 0.3rem 0.36rem;
+    width: min(5.4rem, 16vw);
   }
 
   .issueCard b {
@@ -727,16 +695,8 @@
     font-size: 0.45rem;
   }
 
-  .latticeLockup {
-    left: 50%;
-  }
-
-  .latticeLockup strong {
-    font-size: clamp(3.5rem, 17.5vw, 6.2rem);
-  }
-
-  .latticeLockup small {
-    max-width: 13rem;
+  .waveHeader {
+    left: 0.5rem;
   }
 
   .systemHeading,
@@ -809,11 +769,15 @@
   .slide,
   .issueCard,
   .edges,
-  .latticeLockup,
+  .waveHeaders,
   .progress span,
   .videoFallback,
   .demoVideo,
   .presenterNotes {
     transition-duration: 1ms;
+  }
+
+  .issueCard {
+    animation: none;
   }
 }

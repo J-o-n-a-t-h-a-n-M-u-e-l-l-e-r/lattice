@@ -8,27 +8,35 @@ type IssueCard = {
   title: string;
   chaos: [number, number];
   graph: [number, number];
+  drift: [number, number];
   tone?: 'blue' | 'coral';
 };
 
 const issues: IssueCard[] = [
-  { number: 1, title: 'Types contract', chaos: [8, 23], graph: [9, 18] },
-  { number: 3, title: 'Graph store', chaos: [35, 8], graph: [24, 13] },
-  { number: 5, title: 'Ingest issues', chaos: [63, 16], graph: [38, 18] },
-  { number: 6, title: 'Read deps', chaos: [90, 13], graph: [9, 47] },
-  { number: 13, title: 'LLM extraction', chaos: [22, 34], graph: [24, 42] },
-  { number: 14, title: 'Validators', chaos: [49, 28], graph: [39, 47] },
-  { number: 17, title: 'Tarjan', chaos: [78, 32], graph: [13, 76], tone: 'coral' },
-  { number: 19, title: 'Work waves', chaos: [5, 54], graph: [29, 69] },
-  { number: 20, title: 'Critical path', chaos: [34, 55], graph: [45, 76], tone: 'coral' },
-  { number: 25, title: 'Graph view', chaos: [61, 48], graph: [64, 18] },
-  { number: 30, title: 'MCP route', chaos: [91, 48], graph: [78, 13] },
-  { number: 31, title: 'Agent tools', chaos: [17, 70], graph: [93, 23] },
-  { number: 35, title: 'Simulate', chaos: [47, 73], graph: [64, 47] },
-  { number: 37, title: 'Dispatch', chaos: [72, 66], graph: [82, 42] },
-  { number: 41, title: 'Demo mode', chaos: [92, 72], graph: [60, 76] },
-  { number: 49, title: 'Runs UI', chaos: [27, 88], graph: [76, 70] },
-  { number: 51, title: 'Serialize', chaos: [53, 90], graph: [92, 76] },
+  { number: 1, title: 'Types contract', chaos: [12, 15], graph: [14, 18], drift: [2, -1] },
+  { number: 3, title: 'Graph store', chaos: [37, 12], graph: [38, 18], drift: [-2, 1] },
+  { number: 5, title: 'Ingest issues', chaos: [62, 16], graph: [62, 18], drift: [1, 2] },
+  { number: 6, title: 'Read deps', chaos: [87, 13], graph: [86, 18], drift: [-1, -2] },
+  { number: 13, title: 'LLM extraction', chaos: [12, 37], graph: [14, 39], drift: [1, -2] },
+  { number: 14, title: 'Validators', chaos: [38, 34], graph: [38, 39], drift: [-2, 1] },
+  { number: 17, title: 'Tarjan', chaos: [63, 38], graph: [10, 60], drift: [2, 1], tone: 'coral' },
+  { number: 19, title: 'Work waves', chaos: [87, 35], graph: [30, 60], drift: [-1, 2] },
+  { number: 20, title: 'Critical path', chaos: [12, 61], graph: [14, 81], drift: [1, -1], tone: 'coral' },
+  { number: 25, title: 'Graph view', chaos: [38, 57], graph: [62, 39], drift: [-2, 2] },
+  { number: 30, title: 'MCP route', chaos: [62, 62], graph: [86, 39], drift: [2, -1] },
+  { number: 31, title: 'Agent tools', chaos: [88, 58], graph: [90, 60], drift: [-1, 1] },
+  { number: 35, title: 'Simulate', chaos: [12, 83], graph: [50, 60], drift: [1, 2] },
+  { number: 37, title: 'Dispatch', chaos: [38, 79], graph: [70, 60], drift: [-2, -1] },
+  { number: 41, title: 'Demo mode', chaos: [63, 85], graph: [38, 81], drift: [2, 1] },
+  { number: 49, title: 'Runs UI', chaos: [87, 81], graph: [62, 81], drift: [-1, -2] },
+  { number: 51, title: 'Serialize', chaos: [62, 73], graph: [86, 81], drift: [1, 1] },
+];
+
+const waves = [
+  { index: 0, y: 5, label: 'Wave 0', detail: 'start now · 4' },
+  { index: 1, y: 27, label: 'Wave 1', detail: 'after wave 0 · 4' },
+  { index: 2, y: 48, label: 'Wave 2', detail: 'after wave 1 · 5' },
+  { index: 3, y: 69, label: 'Wave 3', detail: 'after wave 2 · 4' },
 ];
 
 function Arrow({ direction }: { direction: 'left' | 'right' }) {
@@ -166,31 +174,38 @@ export function PitchDeck() {
       </header>
 
       <section className={`${styles.slide} ${slide === 0 ? styles.active : ''}`} aria-hidden={slide !== 0}>
-        <div className={styles.introCopy}>
-          <p className={styles.kicker}>THE PLANNING PROBLEM</p>
-          <h1>
-            A backlog is a flat list
-            <br />
-            <em>pretending</em> to be a plan.
-          </h1>
-          <p className={styles.introBody}>
-            Humans remember the order. Agents do not. So every run re-discovers
-            the same dependencies and still starts work too early.
-          </p>
-        </div>
-
         <div className={`${styles.issueField} ${revealed ? styles.revealed : ''}`} aria-hidden="true">
           <svg className={styles.edges} viewBox="0 0 100 100" preserveAspectRatio="none">
-            <path d="M9 18 24 13 38 18M9 47 24 42 39 47M13 76 29 69 45 76M64 18 78 13 93 23M64 47 82 42 92 76M60 76 76 70 92 76" />
-            <path d="M24 13 24 42M38 18 39 47M29 69 24 42M45 76 39 47M78 13 82 42M82 42 76 70M64 18 64 47 60 76" />
-            <path className={styles.criticalEdge} d="M39 47 45 76M64 47 60 76" />
+            <defs>
+              <marker id="graph-arrow" markerWidth="3" markerHeight="3" refX="2.4" refY="1.5" orient="auto">
+                <path d="M0 0 3 1.5 0 3Z" />
+              </marker>
+            </defs>
+            <path d="M14 20 14 37M14 20 38 37M38 20 38 37M62 20 62 37M62 20 86 37M86 20 86 37" />
+            <path d="M14 41 10 58M14 41 30 58M38 41 30 58M38 41 50 58M62 41 50 58M62 41 70 58M86 41 70 58M86 41 90 58" />
+            <path d="M10 62 14 79M30 62 14 79M30 62 38 79M50 62 38 79M50 62 62 79M70 62 62 79M70 62 86 79M90 62 86 79" />
+            <path className={styles.criticalEdge} d="M10 62 14 79M50 62 62 79" />
           </svg>
+          <div className={styles.waveHeaders}>
+            {waves.map((wave) => (
+              <div
+                className={styles.waveHeader}
+                key={wave.index}
+                style={{ '--wave-y': `${wave.y}%` } as CSSProperties}
+              >
+                <b>{wave.label}</b>
+                <span>{wave.detail}</span>
+              </div>
+            ))}
+          </div>
           {issues.map((issue) => {
             const cardStyle = {
               '--chaos-x': `${issue.chaos[0]}%`,
               '--chaos-y': `${issue.chaos[1]}%`,
               '--graph-x': `${issue.graph[0]}%`,
               '--graph-y': `${issue.graph[1]}%`,
+              '--drift-x': `${issue.drift[0]}px`,
+              '--drift-y': `${issue.drift[1]}px`,
             } as CSSProperties;
             return (
               <div
@@ -203,15 +218,6 @@ export function PitchDeck() {
               </div>
             );
           })}
-          <div className={styles.latticeLockup}>
-            <span>THE HIDDEN GRAPH</span>
-            <strong>LATTICE</strong>
-            <small>53 issues → 16 blocking edges → 3 work waves</small>
-          </div>
-        </div>
-
-        <div className={styles.introFooter}>
-          <p>{revealed ? 'Now everyone can see the order.' : '54 issues. No shared plan.'}</p>
         </div>
       </section>
 

@@ -40,12 +40,14 @@ function Preview({ index, revealed = false }: { index: number; revealed?: boolea
   if (index === 0) {
     return (
       <div className={`${styles.previewSlide} ${styles.previewIntro}`}>
-        <div className={styles.previewKicker}>THE PLANNING PROBLEM</div>
-        <strong>A BACKLOG IS A FLAT LIST<br /><em>PRETENDING</em> TO BE A PLAN.</strong>
         <div className={`${styles.previewIssues} ${revealed ? styles.previewRevealed : ''}`}>
+          <svg viewBox="0 0 100 100" preserveAspectRatio="none" aria-hidden="true">
+            <path d="M14 20 14 37M14 20 38 37M38 20 38 37M62 20 62 37M62 20 86 37M86 20 86 37" />
+            <path d="M14 41 10 58M14 41 30 58M38 41 30 58M38 41 50 58M62 41 50 58M62 41 70 58M86 41 70 58M86 41 90 58" />
+            <path d="M10 62 14 79M30 62 14 79M30 62 38 79M50 62 38 79M50 62 62 79M70 62 62 79M70 62 86 79M90 62 86 79" />
+          </svg>
           {['#01', '#05', '#13', '#17', '#19', '#25', '#30', '#37', '#49'].map((issue) => <i key={issue}>{issue}</i>)}
         </div>
-        {revealed && <b className={styles.previewLattice}>LATTICE</b>}
       </div>
     );
   }
