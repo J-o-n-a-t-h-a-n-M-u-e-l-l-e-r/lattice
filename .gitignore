@@ -26,3 +26,6 @@ artifacts/
 # --- local database (PGlite) ---
 .lattice/pgdata/
 apps/backend/.lattice/
+
+# next build output (kept separate so builds never clobber `next dev`)
+.next-build/
